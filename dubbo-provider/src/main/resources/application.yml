@@ -1,0 +1,7 @@
+krpc:
+  name: UserService
+  host: 127.0.0.1
+  port: 8000
+  registry:
+    enable: true
+    address: consul://127.0.0.1:8500
