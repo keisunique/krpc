@@ -40,12 +40,20 @@ public class RpcConstants {
      */
     public static final byte HEARTBEAT_RESPONSE_TYPE = 4;
 
+    /**
+     * codec kryo
+     */
+    public static final byte CODEC_KRYO = 1;
+
+    /**
+     * gzip
+     */
+    public static final byte COMPRESS_GZIP = 1;
 
     /**
      * 编码格式
      */
     public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
-
 
 
 }

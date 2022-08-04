@@ -30,22 +30,11 @@ public class ConsulServiceDiscovery implements ServiceDiscovery {
 
     public ConsulClient client = null;
 
-    public ConsulServiceDiscovery() {
-        RpcConfig rpcConfig = ApplicationContext.getInstance(RpcConfig.class);
-        if (rpcConfig.getRegistry() != null) {
-            String address = rpcConfig.getRegistry().getAddress();
-            this.initConsulClient(address);
-        }
-    }
-
     public ConsulServiceDiscovery(String address) {
-        this.initConsulClient(address);
-    }
-
-    public void initConsulClient(String address) {
         String ipPort = address.substring("consul://".length());
         client = new ConsulClient(ipPort.split(":")[0], Integer.parseInt(ipPort.split(":")[1]));
     }
+
 
     @Override
     public ServiceDiscoveryResult discovery(String serviceName) {

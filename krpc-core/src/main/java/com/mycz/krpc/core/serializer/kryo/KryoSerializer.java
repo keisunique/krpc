@@ -1,4 +1,4 @@
-package com.mycz.krpc.core.serializer.kyro;
+package com.mycz.krpc.core.serializer.kryo;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;

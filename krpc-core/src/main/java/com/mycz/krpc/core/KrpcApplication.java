@@ -3,12 +3,16 @@ package com.mycz.krpc.core;
 import com.mycz.arch.common.util.StringKit;
 import com.mycz.krpc.core.config.RpcConfig;
 import com.mycz.krpc.core.factory.ApplicationContext;
+import com.mycz.krpc.core.registry.ServiceDiscovery;
 import com.mycz.krpc.core.registry.ServiceRegistry;
+import com.mycz.krpc.core.registry.consul.ConsulServiceDiscovery;
 import com.mycz.krpc.core.registry.consul.ConsulServiceRegistry;
 import com.mycz.krpc.core.remoting.entity.RpcRequest;
+import com.mycz.krpc.core.remoting.transport.client.NettyRpcClient;
+import com.mycz.krpc.core.remoting.transport.client.UnprocessedRequests;
 import com.mycz.krpc.core.remoting.transport.compress.gzip.GzipCompress;
 import com.mycz.krpc.core.remoting.transport.server.NettyRpcServer;
-import com.mycz.krpc.core.serializer.kyro.KryoSerializer;
+import com.mycz.krpc.core.serializer.kryo.KryoSerializer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +51,10 @@ public class KrpcApplication {
         ApplicationContext.addInstance(RpcConfig.class, rpcConfig);
         if (rpcConfig.getRegistry().getEnable()) {
             ApplicationContext.addInstance(ServiceRegistry.class, new ConsulServiceRegistry(rpcConfig.getRegistry().getAddress()));
+            ApplicationContext.addInstance(ServiceDiscovery.class, new ConsulServiceDiscovery(rpcConfig.getRegistry().getAddress()));
         }
+        ApplicationContext.addInstance(NettyRpcClient.class, new NettyRpcClient());
+        ApplicationContext.addInstance(UnprocessedRequests.class, new UnprocessedRequests());
     }
 
     /**

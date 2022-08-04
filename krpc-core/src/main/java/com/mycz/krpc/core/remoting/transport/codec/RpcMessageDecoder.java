@@ -5,7 +5,7 @@ import com.mycz.krpc.core.remoting.entity.RpcMessage;
 import com.mycz.krpc.core.remoting.entity.RpcRequest;
 import com.mycz.krpc.core.remoting.entity.RpcResponse;
 import com.mycz.krpc.core.remoting.transport.compress.gzip.GzipCompress;
-import com.mycz.krpc.core.serializer.kyro.KryoSerializer;
+import com.mycz.krpc.core.serializer.kryo.KryoSerializer;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;

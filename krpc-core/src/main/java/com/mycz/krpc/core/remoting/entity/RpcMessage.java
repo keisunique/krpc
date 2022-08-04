@@ -41,7 +41,7 @@ public class RpcMessage {
     private int requestId;
 
     /**
-     * request data
+     * request | response data
      */
     private Object data;
 

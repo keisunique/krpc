@@ -37,7 +37,6 @@ public class RpcResponse<T>  implements Serializable {
         return response;
     }
 
-
     public static <T> RpcResponse<T> fail() {
         RpcResponse<T> response = new RpcResponse<>();
         response.setCode(0);

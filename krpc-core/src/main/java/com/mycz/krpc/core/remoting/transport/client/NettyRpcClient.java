@@ -1,6 +1,5 @@
 package com.mycz.krpc.core.remoting.transport.client;
 
-import com.mycz.arch.common.util.JsonKit;
 import com.mycz.krpc.core.factory.ApplicationContext;
 import com.mycz.krpc.core.registry.ServiceDiscovery;
 import com.mycz.krpc.core.registry.consul.ConsulServiceDiscovery;
@@ -32,7 +31,6 @@ public class NettyRpcClient {
 
     private final ChannelProvider channelProvider;
     private final Bootstrap bootstrap;
-    private final UnprocessedRequests unprocessedRequests;
 
     public NettyRpcClient() {
         channelProvider = new ChannelProvider();
@@ -51,14 +49,11 @@ public class NettyRpcClient {
                         ch.pipeline().addLast(new NettyRpcClientHandler());
                     }
                 });
-
-        unprocessedRequests = new UnprocessedRequests();
-        ApplicationContext.addInstance(UnprocessedRequests.class, unprocessedRequests);
     }
 
     public CompletableFuture<RpcResponse<Object>> sendRpcRequest(RpcRequest rpcRequest) throws ExecutionException, InterruptedException {
         // 发现服务
-        ServiceDiscovery serviceDiscovery = new ConsulServiceDiscovery();
+        ServiceDiscovery serviceDiscovery = ApplicationContext.getInstance(ServiceDiscovery.class);
         ServiceDiscoveryResult service = serviceDiscovery.discovery(rpcRequest.getServiceName());
 
         CompletableFuture<RpcResponse<Object>> resultFuture = new CompletableFuture<>();
@@ -67,14 +62,15 @@ public class NettyRpcClient {
             // 封装rpcMessage
             RpcMessage rpcMessage = RpcMessage.builder()
                     .magicNum(RpcConstants.MAGIC_NUMBER)
-                    .version((byte) 1)
-                    .messageType((byte) 1)
-                    .codec((byte) 1)
-                    .compress((byte) 1)
+                    .version(RpcConstants.VERSION)
+                    .messageType(RpcConstants.REQUEST_TYPE)
+                    .codec(RpcConstants.CODEC_KRYO)
+                    .compress(RpcConstants.COMPRESS_GZIP)
                     .data(rpcRequest)
                     .build();
 
             channel.writeAndFlush(rpcMessage).addListener((ChannelFutureListener) future -> {
+                UnprocessedRequests unprocessedRequests = ApplicationContext.getInstance(UnprocessedRequests.class);
                 unprocessedRequests.put(rpcRequest.getRequestId(), resultFuture);
                 if (!future.isSuccess()) {
                     future.channel().close();
@@ -111,18 +107,4 @@ public class NettyRpcClient {
         return completableFuture.get();
     }
 
-
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
-        RpcRequest rpcRequest = RpcRequest.builder()
-                .requestId("1111")
-                .version("1")
-                .interfaceName("com.mycz.krpcsampleapi.UserService")
-                .methodName("sayHello")
-                .paramTypes(new Class<?>[0])
-                .parameters(new Object[0])
-                .build();
-
-        CompletableFuture<RpcResponse<Object>> future = new NettyRpcClient().sendRpcRequest(rpcRequest);
-        System.out.println(JsonKit.toJson(future.get()));
-    }
 }

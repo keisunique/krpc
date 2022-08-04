@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutionException;
 
 public class RpcReferenceProxy {
 
+
     /**
      * 代理rpc接口
      */
@@ -16,7 +17,7 @@ public class RpcReferenceProxy {
         // 封装rpc请求消息
         RpcRequest rpcRequest = RpcRequest.builder()
                 .requestId("1111")
-                .version("1")
+                .version("")
                 .serviceName(serviceName)
                 .interfaceName(interfaceName)
                 .methodName(methodName)
@@ -24,7 +25,8 @@ public class RpcReferenceProxy {
                 .parameters(parameters)
                 .build();
 
-        CompletableFuture<RpcResponse<Object>> future = new NettyRpcClient().sendRpcRequest(rpcRequest);
+        NettyRpcClient client = ApplicationContext.getInstance(NettyRpcClient.class);
+        CompletableFuture<RpcResponse<Object>> future = client.sendRpcRequest(rpcRequest);
         return future.get().getData();
     }
 
