@@ -1,9 +1,9 @@
 package com.mycz.krpc.core.remoting.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 import java.io.Serializable;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -11,6 +11,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RpcRequest implements Serializable {
+    // 请求源ip
+    private String ip;
     // 请求id
     private String requestId;
     // 服务名称
@@ -27,10 +29,7 @@ public class RpcRequest implements Serializable {
     private String version;
     // 接口组
     private String group;
-
-    @JsonIgnore
-    public String getRpcServiceName() {
-        return this.getInterfaceName() + this.getGroup() + this.getVersion();
-    }
+    // 请求上下文
+    private Map<String, Object> context;
 
 }

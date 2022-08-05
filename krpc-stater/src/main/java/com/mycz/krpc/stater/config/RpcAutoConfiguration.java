@@ -1,5 +1,6 @@
 package com.mycz.krpc.stater.config;
 
+import com.mycz.krpc.stater.gateway.annotation.MappingBeanPostProcessor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +18,11 @@ public class RpcAutoConfiguration {
     @Bean
     public RpcBeanPostProcessor rpcStarter() {
         return new RpcBeanPostProcessor();
+    }
+
+    @Bean
+    public MappingBeanPostProcessor mappingBeanPostProcessor() {
+        return new MappingBeanPostProcessor();
     }
 
 }
