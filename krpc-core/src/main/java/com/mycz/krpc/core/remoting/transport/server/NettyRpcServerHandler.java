@@ -1,5 +1,6 @@
 package com.mycz.krpc.core.remoting.transport.server;
 
+import com.mycz.krpc.core.factory.ApplicationContext;
 import com.mycz.krpc.core.provider.RpcReferenceInvoke;
 import com.mycz.krpc.core.remoting.entity.RpcConstants;
 import com.mycz.krpc.core.remoting.entity.RpcMessage;
@@ -31,6 +32,11 @@ public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
                 // 常规请求
                 Object data = rpcMessage.getData();
                 if (data instanceof RpcRequest rpcRequest) {
+                    // 全局上下文
+                    ApplicationContext.addAttributes(rpcRequest.getContext());
+                    ApplicationContext.setIp(rpcRequest.getIp());
+                    ApplicationContext.setRequestId(rpcRequest.getRequestId());
+
                     // 找到实际要调用的类
                     Object result = RpcReferenceInvoke.invoke(rpcRequest.getInterfaceName(), rpcRequest.getMethodName(), rpcRequest.getParamTypes(), rpcRequest.getParameters());
 
