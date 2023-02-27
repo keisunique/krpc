@@ -3,6 +3,7 @@ package com.mycz.krpc.core.remoting.entity;
 import lombok.*;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 @Getter

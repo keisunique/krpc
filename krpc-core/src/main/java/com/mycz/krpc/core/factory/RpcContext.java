@@ -2,6 +2,7 @@ package com.mycz.krpc.core.factory;
 
 import lombok.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Getter
@@ -24,5 +25,5 @@ public class RpcContext {
     /**
      * 上下文内容
      */
-    private Map<String,Object> context;
+    private Map<String, Object> context;
 }

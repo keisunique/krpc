@@ -3,7 +3,9 @@ package com.mycz.krpc.stater.config;
 import com.mycz.krpc.core.annotation.KrpcReference;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.annotation.AnnotationAttributes;
 import org.springframework.core.type.AnnotationMetadata;
@@ -17,7 +19,17 @@ import javax.annotation.Nonnull;
 @Slf4j
 public class RpcReferenceRegistrar implements ImportBeanDefinitionRegistrar {
 
-    @SneakyThrows
+    @Override
+    public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry, BeanNameGenerator importBeanNameGenerator) {
+
+        ImportBeanDefinitionRegistrar.super.registerBeanDefinitions(importingClassMetadata, registry, new BeanNameGenerator() {
+            @Override
+            public String generateBeanName(BeanDefinition definition, BeanDefinitionRegistry registry) {
+                return definition.getBeanClassName();
+            }
+        });
+    }
+
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, @Nonnull BeanDefinitionRegistry registry) {
         AnnotationAttributes rpcAttr = AnnotationAttributes.fromMap(importingClassMetadata.getAnnotationAttributes(EnableKrpcService.class.getName()));
@@ -29,7 +41,6 @@ public class RpcReferenceRegistrar implements ImportBeanDefinitionRegistrar {
             KrpcReferenceScanner krpcReferenceScanner = new KrpcReferenceScanner(registry, KrpcReference.class);
             krpcReferenceScanner.scan(basePackages);
         }
-
     }
 
 

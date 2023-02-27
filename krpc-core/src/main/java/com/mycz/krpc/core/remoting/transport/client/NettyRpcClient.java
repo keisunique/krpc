@@ -1,10 +1,7 @@
 package com.mycz.krpc.core.remoting.transport.client;
 
-import com.ctc.wstx.util.StringUtil;
-import com.mycz.arch.common.util.StringKit;
 import com.mycz.krpc.core.factory.ApplicationContext;
 import com.mycz.krpc.core.registry.ServiceDiscovery;
-import com.mycz.krpc.core.registry.consul.ConsulServiceDiscovery;
 import com.mycz.krpc.core.registry.entity.ServiceDiscoveryResult;
 import com.mycz.krpc.core.remoting.entity.RpcConstants;
 import com.mycz.krpc.core.remoting.entity.RpcMessage;
@@ -24,9 +21,9 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -63,7 +60,7 @@ public class NettyRpcClient {
         Channel channel = getChannel(new InetSocketAddress(service.getAddress(), service.getPort()));
         if (channel.isActive()) {
             // 携带上下文和ip
-            rpcRequest.setContext(ApplicationContext.getAttributes());
+            rpcRequest.setContext(new HashMap<>(ApplicationContext.getContext()));
             rpcRequest.setIp(ApplicationContext.getIp());
             rpcRequest.setRequestId(ApplicationContext.getRequestId());
 

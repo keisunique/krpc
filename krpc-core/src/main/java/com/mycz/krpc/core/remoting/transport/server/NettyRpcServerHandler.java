@@ -33,9 +33,9 @@ public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
                 Object data = rpcMessage.getData();
                 if (data instanceof RpcRequest rpcRequest) {
                     // 全局上下文
-                    ApplicationContext.addAttributes(rpcRequest.getContext());
-                    ApplicationContext.setIp(rpcRequest.getIp());
                     ApplicationContext.setRequestId(rpcRequest.getRequestId());
+                    ApplicationContext.setIp(rpcRequest.getIp());
+                    ApplicationContext.addAttributes(rpcRequest.getContext());
 
                     // 找到实际要调用的类
                     Object result = RpcReferenceInvoke.invoke(rpcRequest.getInterfaceName(), rpcRequest.getMethodName(), rpcRequest.getParamTypes(), rpcRequest.getParameters());

@@ -21,6 +21,8 @@ public class KrpcReferenceScanner extends ClassPathBeanDefinitionScanner {
         super.addIncludeFilter(new AnnotationTypeFilter(annoType));
     }
 
+
+
     @Override
     protected Set<BeanDefinitionHolder> doScan(@Nonnull String... basePackages) {
         Set<BeanDefinitionHolder> beanDefinitionHolders = super.doScan(basePackages);
@@ -30,6 +32,7 @@ public class KrpcReferenceScanner extends ClassPathBeanDefinitionScanner {
             beanDefinition.getConstructorArgumentValues().addGenericArgumentValue(Objects.requireNonNull(beanDefinition.getBeanClassName()));
             beanDefinition.setBeanClassName(KrpcReferenceFactoryBean.class.getName());
         }
+
         return beanDefinitionHolders;
     }
 

@@ -1,5 +1,6 @@
 package com.mycz.krpc.stater.gateway.annotation;
 
+import com.mycz.arch.common.gateway.RequestMethod;
 import com.mycz.krpc.stater.config.RpcReferenceRegistrar;
 import org.springframework.context.annotation.Import;
 

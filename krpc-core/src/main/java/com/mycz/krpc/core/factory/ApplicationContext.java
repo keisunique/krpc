@@ -1,5 +1,7 @@
 package com.mycz.krpc.core.factory;
 
+import com.mycz.arch.common.util.JsonKit;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +30,6 @@ public class ApplicationContext {
             .context(new HashMap<>())
             .build());
 
-
     public static String getIp() {
         return CONTEXT.get().getIp();
     }
@@ -54,11 +55,13 @@ public class ApplicationContext {
     }
 
     public static void addAttributes(Map<String, Object> attr) {
+        System.out.println("attr :  "+JsonKit.toJson(attr));
+        System.out.println("context :  "+JsonKit.toJson(CONTEXT.get()));
         CONTEXT.get().getContext().putAll(attr);
     }
 
-    public static Map<String, Object> getAttributes() {
-        return Collections.unmodifiableMap(CONTEXT.get().getContext());
+    public static Map<String, Object> getContext() {
+        return CONTEXT.get().getContext();
     }
 
 }

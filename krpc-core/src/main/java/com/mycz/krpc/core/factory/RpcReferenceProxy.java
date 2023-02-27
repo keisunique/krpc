@@ -4,6 +4,9 @@ import com.mycz.krpc.core.remoting.entity.RpcRequest;
 import com.mycz.krpc.core.remoting.entity.RpcResponse;
 import com.mycz.krpc.core.remoting.transport.client.NettyRpcClient;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -17,6 +20,7 @@ public class RpcReferenceProxy {
         // 封装rpc请求消息
         RpcRequest rpcRequest = RpcRequest.builder()
                 .requestId("1111")
+                .ip("ip")
                 .version("")
                 .serviceName(serviceName)
                 .interfaceName(interfaceName)
