@@ -50,6 +50,7 @@ public class MappingBeanPostProcessor implements BeanPostProcessor {
                                 .name(rpcProperties.getName())
                                 .clazz(ifcc.getName())
                                 .method(method.getName())
+                                .paramType(method.getParameterCount() > 0 ? method.getParameterTypes()[0].getName() : "")
                                 .build();
 
                         MappingEntity entity = MappingEntity.builder()

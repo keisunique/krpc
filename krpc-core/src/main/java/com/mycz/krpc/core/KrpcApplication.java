@@ -103,7 +103,7 @@ public class KrpcApplication {
 
         for (int i = 0; i < 20; i++) {
             list.add(RpcRequest.builder()
-                    .requestId("1111")
+                    .traceId("1111")
                     .version("v1")
                     .interfaceName("UserService")
                     .methodName("list")

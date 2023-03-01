@@ -22,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -62,7 +61,7 @@ public class NettyRpcClient {
             // 携带上下文和ip
             rpcRequest.setContext(new HashMap<>(ApplicationContext.getContext()));
             rpcRequest.setIp(ApplicationContext.getIp());
-            rpcRequest.setRequestId(ApplicationContext.getRequestId());
+            rpcRequest.setTraceId(ApplicationContext.getRequestId());
 
             // 封装rpcMessage
             RpcMessage rpcMessage = RpcMessage.builder()
@@ -76,7 +75,7 @@ public class NettyRpcClient {
 
             channel.writeAndFlush(rpcMessage).addListener((ChannelFutureListener) future -> {
                 UnprocessedRequests unprocessedRequests = ApplicationContext.getInstance(UnprocessedRequests.class);
-                unprocessedRequests.put(rpcRequest.getRequestId(), resultFuture);
+                unprocessedRequests.put(rpcRequest.getTraceId(), resultFuture);
                 if (!future.isSuccess()) {
                     future.channel().close();
                     resultFuture.completeExceptionally(future.cause());

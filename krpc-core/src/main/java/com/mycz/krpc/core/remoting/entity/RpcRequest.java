@@ -3,7 +3,6 @@ package com.mycz.krpc.core.remoting.entity;
 import lombok.*;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Map;
 
 @Getter
@@ -15,7 +14,7 @@ public class RpcRequest implements Serializable {
     // 请求源ip
     private String ip;
     // 请求id
-    private String requestId;
+    private String traceId;
     // 服务名称
     private String serviceName;
     // 接口名称

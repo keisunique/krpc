@@ -21,8 +21,6 @@ public class KrpcReferenceScanner extends ClassPathBeanDefinitionScanner {
         super.addIncludeFilter(new AnnotationTypeFilter(annoType));
     }
 
-
-
     @Override
     protected Set<BeanDefinitionHolder> doScan(@Nonnull String... basePackages) {
         Set<BeanDefinitionHolder> beanDefinitionHolders = super.doScan(basePackages);

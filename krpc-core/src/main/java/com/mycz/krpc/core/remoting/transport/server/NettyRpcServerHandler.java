@@ -33,7 +33,7 @@ public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
                 Object data = rpcMessage.getData();
                 if (data instanceof RpcRequest rpcRequest) {
                     // 全局上下文
-                    ApplicationContext.setRequestId(rpcRequest.getRequestId());
+                    ApplicationContext.setRequestId(rpcRequest.getTraceId());
                     ApplicationContext.setIp(rpcRequest.getIp());
                     ApplicationContext.addAttributes(rpcRequest.getContext());
 
@@ -42,7 +42,7 @@ public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
 
                     // 构造返回对象
                     if (ctx.channel().isActive() && ctx.channel().isWritable()) {
-                        RpcResponse<Object> rpcResponse = RpcResponse.success(result, rpcRequest.getRequestId());
+                        RpcResponse<Object> rpcResponse = RpcResponse.success(result, rpcRequest.getTraceId());
                         rpcResponse.setData(result);
                         rpcMessage.setData(rpcResponse);
                     } else {
@@ -57,6 +57,9 @@ public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
                 rpcMessage.setMessageType(RpcConstants.RESPONSE_TYPE);
                 ctx.writeAndFlush(rpcMessage).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
             }
+        } catch (Exception e) {
+            log.error("[][] - ", e);
+            ctx.writeAndFlush(msg).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
         } finally {
             // 确保ByteBuf释放, 防止内存泄漏
             ReferenceCountUtil.release(msg);

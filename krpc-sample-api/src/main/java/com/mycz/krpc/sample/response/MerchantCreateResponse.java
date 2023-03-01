@@ -7,7 +7,7 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class MerchantCreateResponse {
+public class MerchantCreateResponse{
 
     private Long id;
     private String name;

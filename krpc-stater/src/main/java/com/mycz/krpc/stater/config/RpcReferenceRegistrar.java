@@ -21,7 +21,6 @@ public class RpcReferenceRegistrar implements ImportBeanDefinitionRegistrar {
 
     @Override
     public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry, BeanNameGenerator importBeanNameGenerator) {
-
         ImportBeanDefinitionRegistrar.super.registerBeanDefinitions(importingClassMetadata, registry, new BeanNameGenerator() {
             @Override
             public String generateBeanName(BeanDefinition definition, BeanDefinitionRegistry registry) {
