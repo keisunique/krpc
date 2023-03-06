@@ -11,6 +11,6 @@ import java.util.List;
  */
 public interface ServiceDiscovery {
 
-    ServiceDiscoveryResult discovery(String serviceName);
+    ServiceDiscoveryResult discovery(String serviceName) throws Exception;
 
 }

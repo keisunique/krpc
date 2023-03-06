@@ -11,6 +11,7 @@ import com.mycz.krpc.core.config.RpcConfig;
 import com.mycz.krpc.core.factory.ApplicationContext;
 import com.mycz.krpc.core.registry.ServiceDiscovery;
 import com.mycz.krpc.core.registry.entity.ServiceDiscoveryResult;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 public class ConsulServiceDiscovery implements ServiceDiscovery {
 
     /**
@@ -25,7 +27,7 @@ public class ConsulServiceDiscovery implements ServiceDiscovery {
      */
     private final Cache<String, List<ServiceDiscoveryResult>> serviceCache = CacheBuilder.newBuilder()
             .maximumSize(1000)
-            .expireAfterAccess(30, TimeUnit.SECONDS)
+            .expireAfterWrite(5, TimeUnit.SECONDS)
             .build();
 
     public ConsulClient client = null;
@@ -37,7 +39,7 @@ public class ConsulServiceDiscovery implements ServiceDiscovery {
 
 
     @Override
-    public ServiceDiscoveryResult discovery(String serviceName) {
+    public ServiceDiscoveryResult discovery(String serviceName) throws Exception {
         List<ServiceDiscoveryResult> serviceList = serviceCache.getIfPresent(serviceName);
         if (ListKit.isEmpty(serviceList)) {
             serviceList = new ArrayList<>();
@@ -52,8 +54,12 @@ public class ConsulServiceDiscovery implements ServiceDiscovery {
                 }
                 serviceCache.put(serviceName, serviceList);
             } else {
-                Log.warn("consul client 没有初始化!");
+                log.warn("consul client 没有初始化!");
             }
+        }
+
+        if (ListKit.isEmpty(serviceList)) {
+            throw new Exception("服务不可用");
         }
 
         return serviceList.get(new Random().nextInt(serviceList.size()));

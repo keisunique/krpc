@@ -13,7 +13,7 @@ public class RpcReferenceProxy {
     /**
      * 代理rpc接口
      */
-    public static Object proxy(String serviceName, String interfaceName, String methodName, Class<?>[] paramTypes, Object[] parameters) throws ExecutionException, InterruptedException {
+    public static Object proxy(String serviceName, String interfaceName, String methodName, Class<?>[] paramTypes, Object[] parameters) throws Exception {
         // 封装rpc请求消息
         RpcRequest rpcRequest = RpcRequest.builder()
                 .traceId("1111")

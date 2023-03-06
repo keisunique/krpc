@@ -1,6 +1,6 @@
 package com.mycz.krpc.stater.config;
 
-import com.mycz.krpc.stater.gateway.annotation.MappingBeanPostProcessor;
+import com.mycz.krpc.stater.gateway.MappingBeanPostProcessor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

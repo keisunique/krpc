@@ -1,4 +1,4 @@
-package com.mycz.krpc.stater.gateway.annotation;
+package com.mycz.krpc.stater.gateway;
 
 import lombok.Getter;
 

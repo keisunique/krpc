@@ -50,7 +50,7 @@ public class NettyRpcClient {
                 });
     }
 
-    public CompletableFuture<RpcResponse<Object>> sendRpcRequest(RpcRequest rpcRequest) {
+    public CompletableFuture<RpcResponse<Object>> sendRpcRequest(RpcRequest rpcRequest) throws Exception {
         // 发现服务
         ServiceDiscovery serviceDiscovery = ApplicationContext.getInstance(ServiceDiscovery.class);
         ServiceDiscoveryResult service = serviceDiscovery.discovery(rpcRequest.getServiceName());
