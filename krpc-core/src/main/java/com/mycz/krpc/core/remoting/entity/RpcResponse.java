@@ -1,7 +1,6 @@
 package com.mycz.krpc.core.remoting.entity;
 
 import lombok.*;
-import org.apache.poi.ss.formula.functions.T;
 
 import java.io.Serializable;
 
@@ -12,7 +11,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class RpcResponse<T>  implements Serializable {
 
-    private String requestId;
+    private String tranceId;
     /**
      * response code
      */
@@ -26,11 +25,11 @@ public class RpcResponse<T>  implements Serializable {
      */
     private T data;
 
-    public static <T> RpcResponse<T> success(T data, String requestId) {
+    public static <T> RpcResponse<T> success(T data, String tranceId) {
         RpcResponse<T> response = new RpcResponse<>();
         response.setCode(1);
         response.setMessage("成功");
-        response.setRequestId(requestId);
+        response.setTranceId(tranceId);
         if (null != data) {
             response.setData(data);
         }

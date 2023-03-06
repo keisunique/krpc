@@ -10,12 +10,12 @@ public class UnprocessedRequests {
 
     private final Map<String, CompletableFuture<RpcResponse<Object>>> futureMap = new ConcurrentHashMap<>();
 
-    public void put(String requestId, CompletableFuture<RpcResponse<Object>> future) {
-        futureMap.put(requestId, future);
+    public void put(String traceId, CompletableFuture<RpcResponse<Object>> future) {
+        futureMap.put(traceId, future);
     }
 
     public void complete(RpcResponse<Object> rpcResponse) {
-        CompletableFuture<RpcResponse<Object>> future = futureMap.remove(rpcResponse.getRequestId());
+        CompletableFuture<RpcResponse<Object>> future = futureMap.remove(rpcResponse.getTranceId());
         if (null != future) {
             future.complete(rpcResponse);
         } else {

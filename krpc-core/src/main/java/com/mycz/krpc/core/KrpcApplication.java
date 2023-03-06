@@ -69,7 +69,7 @@ public class KrpcApplication {
             rpcConfig.setHost("127.0.0.1");
         }
         if (rpcConfig.getPort() == null) {
-            rpcConfig.setPort(-1);
+            rpcConfig.setPort(0);
         }
         if (StringKit.isBlank(rpcConfig.getName())) {
             throw new IllegalArgumentException("`krpc:name` 必填");

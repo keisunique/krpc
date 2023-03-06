@@ -2,7 +2,6 @@ package com.mycz.krpc.core.factory;
 
 import com.mycz.arch.common.util.JsonKit;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +25,7 @@ public class ApplicationContext {
     // 上下文容器
     private static final ThreadLocal<RpcContext> CONTEXT = ThreadLocal.withInitial(() -> RpcContext.builder()
             .ip("")
-            .requestId("")
+            .traceId("")
             .context(new HashMap<>())
             .build());
 
@@ -38,12 +37,12 @@ public class ApplicationContext {
         CONTEXT.get().setIp(ip);
     }
 
-    public static String getRequestId() {
-        return CONTEXT.get().getRequestId();
+    public static String getTraceId() {
+        return CONTEXT.get().getTraceId();
     }
 
-    public static void setRequestId(String requestId) {
-        CONTEXT.get().setRequestId(requestId);
+    public static void setTranceId(String tranceId) {
+        CONTEXT.get().setTraceId(tranceId);
     }
 
     public static void addAttribute(String key, Object value) {

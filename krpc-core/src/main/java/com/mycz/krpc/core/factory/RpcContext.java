@@ -2,7 +2,6 @@ package com.mycz.krpc.core.factory;
 
 import lombok.*;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Getter
@@ -20,7 +19,7 @@ public class RpcContext {
     /**
      * 请求id
      */
-    private String requestId;
+    private String traceId;
 
     /**
      * 上下文内容

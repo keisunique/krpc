@@ -21,7 +21,7 @@ public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
      * 处理接收数据
      */
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         try {
             if (msg instanceof RpcMessage rpcMessage) {
                 // 心跳请求
@@ -33,33 +33,27 @@ public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
                 Object data = rpcMessage.getData();
                 if (data instanceof RpcRequest rpcRequest) {
                     // 全局上下文
-                    ApplicationContext.setRequestId(rpcRequest.getTraceId());
+                    ApplicationContext.setTranceId(rpcRequest.getTraceId());
                     ApplicationContext.setIp(rpcRequest.getIp());
                     ApplicationContext.addAttributes(rpcRequest.getContext());
 
                     // 找到实际要调用的类
-                    Object result = RpcReferenceInvoke.invoke(rpcRequest.getInterfaceName(), rpcRequest.getMethodName(), rpcRequest.getParamTypes(), rpcRequest.getParameters());
-
-                    // 构造返回对象
-                    if (ctx.channel().isActive() && ctx.channel().isWritable()) {
-                        RpcResponse<Object> rpcResponse = RpcResponse.success(result, rpcRequest.getTraceId());
-                        rpcResponse.setData(result);
-                        rpcMessage.setData(rpcResponse);
-                    } else {
-                        RpcResponse<Object> rpcResponse = RpcResponse.fail();
-                        rpcMessage.setData(rpcResponse);
+                    try {
+                        Object result = RpcReferenceInvoke.invoke(rpcRequest.getInterfaceName(), rpcRequest.getMethodName(), rpcRequest.getParamTypes(), rpcRequest.getParameters());
+                        rpcMessage.setData(RpcResponse.success(result, rpcRequest.getTraceId()));
+                    } catch (Exception e) {
+                        rpcMessage.setData(RpcResponse.fail());
                         log.error("not writable now, message dropped");
                     }
                 } else {
-                    log.error("非rpc请求内容");
+                    log.error("非法rpc请求内容");
                 }
 
                 rpcMessage.setMessageType(RpcConstants.RESPONSE_TYPE);
                 ctx.writeAndFlush(rpcMessage).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
+            } else {
+                log.info("[NettyRpcServerHandler][ChannelRead] - invalid msg");
             }
-        } catch (Exception e) {
-            log.error("[][] - ", e);
-            ctx.writeAndFlush(msg).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
         } finally {
             // 确保ByteBuf释放, 防止内存泄漏
             ReferenceCountUtil.release(msg);

@@ -42,32 +42,4 @@ public class RpcReferenceRegistrar implements ImportBeanDefinitionRegistrar {
         }
     }
 
-
-    //            for (String packageName : packageNameList) {
-//                String path = ClassUtils.convertClassNameToResourcePath(SystemPropertyUtils.resolvePlaceholders(packageName));
-//                System.out.println(path);
-//                String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX.concat(path).concat("/**/*.class");
-//
-//                System.out.println(packageSearchPath);
-//
-//                Resource[] resources = resourceLoader.getResources(packageSearchPath);
-//                System.out.println("resources 长度: " + resources.length);
-//                int i = 0;
-//                for (Resource resource : resources) {
-//                    if (resource.isFile()) {
-//                        File file = resource.getFile();
-//                        String fileName = file.getName().replace(".class", "");
-//                        System.out.println(file.getCanonicalPath());
-//                        Class<?> aClass = Class.forName(packageName + "." + fileName);
-//                        if (aClass.isInterface() && !aClass.isAnnotation() && aClass.isAnnotationPresent(KrpcReference.class)) {
-//                            BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition();
-//                            GenericBeanDefinition beanDefinition = (GenericBeanDefinition) builder.getBeanDefinition();
-//                            beanDefinition.getConstructorArgumentValues().addGenericArgumentValue(packageName + "." + fileName);
-//                            beanDefinition.setBeanClass(MyFactoryBean.class);
-//                            registry.registerBeanDefinition(fileName, beanDefinition);
-//                        }
-//                    }
-//                }
-//            }
-
 }

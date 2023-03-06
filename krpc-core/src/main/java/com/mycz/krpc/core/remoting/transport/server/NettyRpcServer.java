@@ -1,5 +1,6 @@
 package com.mycz.krpc.core.remoting.transport.server;
 
+import com.mycz.arch.common.util.JsonKit;
 import com.mycz.krpc.core.config.RpcConfig;
 import com.mycz.krpc.core.factory.ApplicationContext;
 import com.mycz.krpc.core.remoting.transport.codec.RpcMessageDecoder;
@@ -18,6 +19,8 @@ import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -57,7 +60,7 @@ public class NettyRpcServer {
                     });
 
             RpcConfig rpcConfig = ApplicationContext.getInstance(RpcConfig.class);
-            ChannelFuture f = b.bind(rpcConfig.getHost(), rpcConfig.getPort()).sync();
+            ChannelFuture f = b.bind(rpcConfig.getHost(), rpcConfig.getPort() == null ? 0 : rpcConfig.getPort()).sync();
             f.addListener(new NettyRpcServiceListener());
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {

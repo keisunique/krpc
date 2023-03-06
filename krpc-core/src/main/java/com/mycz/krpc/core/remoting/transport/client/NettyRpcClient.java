@@ -61,7 +61,7 @@ public class NettyRpcClient {
             // 携带上下文和ip
             rpcRequest.setContext(new HashMap<>(ApplicationContext.getContext()));
             rpcRequest.setIp(ApplicationContext.getIp());
-            rpcRequest.setTraceId(ApplicationContext.getRequestId());
+            rpcRequest.setTraceId(ApplicationContext.getTraceId());
 
             // 封装rpcMessage
             RpcMessage rpcMessage = RpcMessage.builder()

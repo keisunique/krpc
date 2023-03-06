@@ -26,7 +26,12 @@ public @interface RequestMapping {
     /**
      * 请求路径
      */
-    String[] paths() default {};
+    String path() default "";
+
+    /**
+     * 请求路径前缀
+     */
+    MappingPrefix prefix() default MappingPrefix.MAPI;
 
     /**
      * 方法描述

@@ -10,6 +10,7 @@ import io.netty.channel.ChannelFutureListener;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 @Slf4j
 public class NettyRpcServiceListener implements ChannelFutureListener {
@@ -18,8 +19,14 @@ public class NettyRpcServiceListener implements ChannelFutureListener {
     public void operationComplete(ChannelFuture future) throws Exception {
         if (future.isSuccess()) {
             log.info("*** krpc - 启动成功");
+
+            InetSocketAddress socketAddress = (InetSocketAddress) future.channel().localAddress();
+            log.info("*** krpc - 端口: {}", socketAddress.getPort());
+
             // 注册服务
             RpcConfig rpcConfig = ApplicationContext.getInstance(RpcConfig.class);
+            rpcConfig.setPort(socketAddress.getPort());
+
             if (rpcConfig.getRegistry().getEnable()) {
                 this.register(rpcConfig.getName(), rpcConfig.getHost(), rpcConfig.getPort());
             }

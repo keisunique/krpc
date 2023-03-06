@@ -38,6 +38,7 @@ public class ConsulServiceRegistry implements ServiceRegistry {
      */
     @Override
     public ServiceRegisterResult register(String serviceName, InetSocketAddress address) {
+
         // 服务基础信息
         NewService service = new NewService();
         String serviceId = serviceName + "." + RandomKit.randomString(RandomKit.CS_LOWERCASE_LETTER + RandomKit.CS_NUMBER, 12);
@@ -53,7 +54,12 @@ public class ConsulServiceRegistry implements ServiceRegistry {
         check.setInterval(INTERVAL);
         service.setCheck(check);
 
-        client.agentServiceRegister(service);
+        try {
+            client.agentServiceRegister(service);
+        } catch (Exception e) {
+            log.error("*** 服务注册失败 ***", e);
+            System.exit(-1);
+        }
 
         log.info("*** 服务注册成功 - 服务名ID:{}, 地址:{}:{} ", serviceId, address.getHostName(), address.getPort());
         return ServiceRegisterResult.builder().id(serviceId).build();

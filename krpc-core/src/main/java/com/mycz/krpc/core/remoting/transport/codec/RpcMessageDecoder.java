@@ -56,7 +56,7 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
                 .messageType(in.readByte())
                 .codec(in.readByte())
                 .compress(in.readByte())
-                .requestId(in.readInt())
+                .traceId(in.readInt())
                 .build();
 
         int fullLength = in.readInt();
