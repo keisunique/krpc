@@ -62,6 +62,8 @@ public class ConsulServiceDiscovery implements ServiceDiscovery {
             throw new Exception("服务不可用");
         }
 
+
+
         return serviceList.get(new Random().nextInt(serviceList.size()));
     }
 
