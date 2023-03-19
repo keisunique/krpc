@@ -1,7 +1,0 @@
-krpc:
-  name: CustomerService
-  host: 127.0.0.1
-  port: 8100
-  registry:
-    enable: true
-    address: consul://127.0.0.1:8500

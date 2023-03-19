@@ -22,15 +22,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ConsulServiceDiscovery implements ServiceDiscovery {
 
-    /**
-     * 服务信息缓存
-     */
-    private final Cache<String, List<ServiceDiscoveryResult>> serviceCache = CacheBuilder.newBuilder()
-            .maximumSize(1000)
-            .expireAfterWrite(5, TimeUnit.SECONDS)
-            .build();
-
-    public ConsulClient client = null;
+    public ConsulClient client;
 
     public ConsulServiceDiscovery(String address) {
         String ipPort = address.substring("consul://".length());
@@ -40,29 +32,23 @@ public class ConsulServiceDiscovery implements ServiceDiscovery {
 
     @Override
     public ServiceDiscoveryResult discovery(String serviceName) throws Exception {
-        List<ServiceDiscoveryResult> serviceList = serviceCache.getIfPresent(serviceName);
-        if (ListKit.isEmpty(serviceList)) {
-            serviceList = new ArrayList<>();
-            if (client != null) {
-                Response<Map<String, Service>> agentServices = client.getAgentServices();
-                Map<String, Service> value = agentServices.getValue();
-                for (String key : value.keySet()) {
-                    Service service = value.get(key);
-                    if (service.getService().equals(serviceName)) {
-                        serviceList.add(ServiceDiscoveryResult.builder().id(key).name(service.getService()).address(service.getAddress()).port(service.getPort()).build());
-                    }
-                }
-                serviceCache.put(serviceName, serviceList);
-            } else {
-                log.warn("consul client 没有初始化!");
+        List<ServiceDiscoveryResult> serviceList = new ArrayList<>();
+        if (client == null) {
+            throw new Exception("ConsulClient未初始化");
+        }
+
+        Response<Map<String, Service>> agentServices = client.getAgentServices();
+        Map<String, Service> value = agentServices.getValue();
+        for (String key : value.keySet()) {
+            Service service = value.get(key);
+            if (service.getService().equals(serviceName)) {
+                serviceList.add(ServiceDiscoveryResult.builder().id(key).name(service.getService()).address(service.getAddress()).port(service.getPort()).build());
             }
         }
 
         if (ListKit.isEmpty(serviceList)) {
             throw new Exception("服务不可用");
         }
-
-
 
         return serviceList.get(new Random().nextInt(serviceList.size()));
     }

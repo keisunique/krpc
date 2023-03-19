@@ -17,7 +17,7 @@ public class RpcReferenceInvoke {
      */
     public static Object invoke(String interfaceName, String methodName, Class<?>[] paramTypes, Object[] parameters) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Object interfaceObject = INTERFACE_MAP.get(interfaceName);
-        System.out.println("method : " + methodName + " interfaceName : " + interfaceName + " paramtype : " + paramTypes[0].getName());
+//        System.out.println("method : " + methodName + " interfaceName : " + interfaceName + " paramtype : " + paramTypes[0].getName());
         Method method = interfaceObject.getClass().getMethod(methodName, paramTypes);
 
         return method.invoke(interfaceObject, parameters);

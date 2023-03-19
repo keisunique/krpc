@@ -54,8 +54,6 @@ public class ApplicationContext {
     }
 
     public static void addAttributes(Map<String, Object> attr) {
-        System.out.println("attr :  "+JsonKit.toJson(attr));
-        System.out.println("context :  "+JsonKit.toJson(CONTEXT.get()));
         CONTEXT.get().getContext().putAll(attr);
     }
 
