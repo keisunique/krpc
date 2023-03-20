@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.Proxy;
 
 @Slf4j
 public class RpcBeanPostProcessor implements BeanPostProcessor {
@@ -46,6 +47,14 @@ public class RpcBeanPostProcessor implements BeanPostProcessor {
         Class<?>[] interfaces = bean.getClass().getInterfaces();
         for (Class<?> anInterface : interfaces) {
             if (anInterface.isAnnotationPresent(KrpcReference.class)) {
+                // 如果是代理类则过滤
+                if (Proxy.isProxyClass(bean.getClass())) {
+                    continue;
+                }
+                if (bean.getClass().isInterface()) {
+                    log.info("竟然有接口,赶紧看看! " + bean.getClass().getName());
+                    continue;
+                }
                 RpcReferenceInvoke.addInterface(anInterface, bean);
             }
         }

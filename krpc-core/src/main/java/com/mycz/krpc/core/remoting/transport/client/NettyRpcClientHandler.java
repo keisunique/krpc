@@ -26,6 +26,8 @@ public class NettyRpcClientHandler extends ChannelInboundHandlerAdapter {
                     unprocessedRequests.complete(rpcResponse);
                 }
             }
+        } catch (Exception e) {
+            log.error("[NettyRpcClientHandler][ChannelRead] - ", e);
         } finally {
             ReferenceCountUtil.release(msg);
         }

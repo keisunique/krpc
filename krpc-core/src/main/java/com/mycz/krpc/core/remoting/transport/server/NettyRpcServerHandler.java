@@ -14,6 +14,8 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
+import java.lang.reflect.InvocationTargetException;
+
 @Slf4j
 public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
 
@@ -21,7 +23,7 @@ public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
      * 处理接收数据
      */
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         try {
             if (msg instanceof RpcMessage rpcMessage) {
                 // 心跳请求
@@ -48,7 +50,6 @@ public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
                 } else {
                     log.error("非法rpc请求内容");
                 }
-
                 rpcMessage.setMessageType(RpcConstants.RESPONSE_TYPE);
                 ctx.writeAndFlush(rpcMessage).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
             } else {

@@ -1,5 +1,7 @@
 package com.mycz.krpc.core.provider;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -8,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * rpc方法调用
  */
+@Slf4j
 public class RpcReferenceInvoke {
 
     private static final ConcurrentHashMap<String, Object> INTERFACE_MAP = new ConcurrentHashMap<>();
@@ -17,9 +20,8 @@ public class RpcReferenceInvoke {
      */
     public static Object invoke(String interfaceName, String methodName, Class<?>[] paramTypes, Object[] parameters) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Object interfaceObject = INTERFACE_MAP.get(interfaceName);
-//        System.out.println("method : " + methodName + " interfaceName : " + interfaceName + " paramtype : " + paramTypes[0].getName());
+//        log.info("[RpcReferenceInvoke][invoke] class = {}", interfaceObject.getClass().getName());
         Method method = interfaceObject.getClass().getMethod(methodName, paramTypes);
-
         return method.invoke(interfaceObject, parameters);
     }
 
