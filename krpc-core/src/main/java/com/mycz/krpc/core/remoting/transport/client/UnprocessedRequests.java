@@ -15,12 +15,10 @@ public class UnprocessedRequests {
 
     public void put(String traceId, CompletableFuture<RpcResponse<Object>> future) {
         futureMap.put(traceId, future);
-        log.info("futureMap1 key = {} , traceId = {}", futureMap.keySet(), traceId);
     }
 
     public void complete(RpcResponse<Object> rpcResponse) {
-        log.info("futureMap2 key = {} , traceId = {}", futureMap.keySet(), rpcResponse.getTranceId());
-        CompletableFuture<RpcResponse<Object>> future = futureMap.remove(rpcResponse.getTranceId());
+        CompletableFuture<RpcResponse<Object>> future = futureMap.remove(rpcResponse.getTraceId());
         if (future != null) {
             future.complete(rpcResponse);
         } else {

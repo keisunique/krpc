@@ -9,9 +9,9 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RpcResponse<T>  implements Serializable {
+public class RpcResponse<T> implements Serializable {
 
-    private String tranceId;
+    private String traceId;
     /**
      * response code
      */
@@ -25,11 +25,11 @@ public class RpcResponse<T>  implements Serializable {
      */
     private T data;
 
-    public static <T> RpcResponse<T> success(T data, String tranceId) {
+    public static <T> RpcResponse<T> success(T data, String traceId) {
         RpcResponse<T> response = new RpcResponse<>();
         response.setCode(1);
         response.setMessage("成功");
-        response.setTranceId(tranceId);
+        response.setTraceId(traceId);
         if (null != data) {
             response.setData(data);
         }

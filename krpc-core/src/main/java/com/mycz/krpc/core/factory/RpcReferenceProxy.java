@@ -17,9 +17,9 @@ public class RpcReferenceProxy {
     public static Object proxy(String serviceName, String interfaceName, String methodName, Class<?>[] paramTypes, Object[] parameters) throws Exception {
         // 封装rpc请求消息
         RpcRequest rpcRequest = RpcRequest.builder()
-                .traceId(RandomKit.randomNumStr(10))
+                .traceId(RandomKit.randomNumStr(16))
                 .ip("ip")
-                .version("")
+                .version("1.0")
                 .serviceName(serviceName)
                 .interfaceName(interfaceName)
                 .methodName(methodName)

@@ -13,6 +13,7 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.ThreadContext;
 
 import java.lang.reflect.InvocationTargetException;
 
@@ -41,11 +42,16 @@ public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
 
                     // 找到实际要调用的类
                     try {
+                        ThreadContext.put("TRACE_ID", rpcRequest.getTraceId());
                         Object result = RpcReferenceInvoke.invoke(rpcRequest.getInterfaceName(), rpcRequest.getMethodName(), rpcRequest.getParamTypes(), rpcRequest.getParameters());
                         rpcMessage.setData(RpcResponse.success(result, rpcRequest.getTraceId()));
                     } catch (Exception e) {
-                        rpcMessage.setData(RpcResponse.fail());
-                        log.error("not writable now, message dropped");
+                        RpcResponse<Object> response = RpcResponse.fail();
+                        response.setTraceId(rpcRequest.getTraceId());
+                        rpcMessage.setData(response);
+                        log.error("not writable now, message dropped", e);
+                    }finally {
+                        ThreadContext.remove("TRACE_ID");
                     }
                 } else {
                     log.error("非法rpc请求内容");
