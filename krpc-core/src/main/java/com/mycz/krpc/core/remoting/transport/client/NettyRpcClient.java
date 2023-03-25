@@ -1,5 +1,7 @@
 package com.mycz.krpc.core.remoting.transport.client;
 
+import com.mycz.arch.common.util.RandomKit;
+import com.mycz.arch.common.util.StringKit;
 import com.mycz.krpc.core.factory.ApplicationContext;
 import com.mycz.krpc.core.registry.ServiceDiscovery;
 import com.mycz.krpc.core.registry.entity.ServiceDiscoveryResult;
@@ -61,6 +63,9 @@ public class NettyRpcClient {
             // 携带上下文和ip
             rpcRequest.setContext(new HashMap<>(ApplicationContext.getContext()));
             rpcRequest.setIp(ApplicationContext.getIp());
+            if (StringKit.isBlank(rpcRequest.getTraceId())) {
+                rpcRequest.setTraceId(RandomKit.randomNumStr(16));
+            }
 
             // 封装rpcMessage
             RpcMessage rpcMessage = RpcMessage.builder()
@@ -74,7 +79,7 @@ public class NettyRpcClient {
 
             channel.writeAndFlush(rpcMessage).addListener((ChannelFutureListener) future -> {
                 UnprocessedRequests unprocessedRequests = ApplicationContext.getInstance(UnprocessedRequests.class);
-                unprocessedRequests.put(rpcRequest.getTraceId(), resultFuture);
+                unprocessedRequests.put(rpcRequest.getTraceId() + "", resultFuture);
                 if (!future.isSuccess()) {
                     future.channel().close();
                     resultFuture.completeExceptionally(future.cause());
