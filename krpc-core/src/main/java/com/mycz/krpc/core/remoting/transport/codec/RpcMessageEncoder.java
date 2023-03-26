@@ -28,7 +28,7 @@ public class RpcMessageEncoder extends MessageToByteEncoder<RpcMessage> {
             out.writeByte(rpcMessage.getMessageType()); // 1B
             out.writeByte(rpcMessage.getCodec()); // 1B
             out.writeByte(rpcMessage.getCompress()); // 1B
-            out.writeInt(ATOMIC_INTEGER.getAndIncrement()); // 4B
+            out.writeInt(rpcMessage.getTraceId()); // 4B
 
             byte[] bodyBytes = null;
             int fullLength = out.writerIndex() + 4;

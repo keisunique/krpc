@@ -26,9 +26,12 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class NettyRpcClient {
+
+    private static final AtomicInteger ATOMIC_INTEGER = new AtomicInteger(0);
 
     private final ChannelProvider channelProvider;
     private final Bootstrap bootstrap;
@@ -74,12 +77,13 @@ public class NettyRpcClient {
                     .messageType(RpcConstants.REQUEST_TYPE)
                     .codec(RpcConstants.CODEC_KRYO)
                     .compress(RpcConstants.COMPRESS_GZIP)
+                    .traceId(ATOMIC_INTEGER.getAndIncrement())
                     .data(rpcRequest)
                     .build();
 
             channel.writeAndFlush(rpcMessage).addListener((ChannelFutureListener) future -> {
                 UnprocessedRequests unprocessedRequests = ApplicationContext.getInstance(UnprocessedRequests.class);
-                unprocessedRequests.put(rpcRequest.getTraceId() + "", resultFuture);
+                unprocessedRequests.put(rpcMessage.getTraceId(), resultFuture);
                 if (!future.isSuccess()) {
                     future.channel().close();
                     resultFuture.completeExceptionally(future.cause());

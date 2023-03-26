@@ -9,6 +9,8 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.ReferenceCountUtil;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
+
 @Slf4j
 public class NettyRpcClientHandler extends ChannelInboundHandlerAdapter {
 
@@ -21,9 +23,9 @@ public class NettyRpcClientHandler extends ChannelInboundHandlerAdapter {
                     //
 
                 } else if (messageType == RpcConstants.RESPONSE_TYPE) {
-                    RpcResponse<Object> rpcResponse = (RpcResponse<Object>) tmp.getData();
+//                    RpcResponse<Object> rpcResponse = (RpcResponse<Object>) tmp.getData();
                     UnprocessedRequests unprocessedRequests = ApplicationContext.getInstance(UnprocessedRequests.class);
-                    unprocessedRequests.complete(rpcResponse);
+                    unprocessedRequests.complete(tmp);
                 }
             }
         } catch (Exception e) {
@@ -31,6 +33,14 @@ public class NettyRpcClientHandler extends ChannelInboundHandlerAdapter {
         } finally {
             ReferenceCountUtil.release(msg);
         }
+    }
+
+    /**
+     * 处理上一个ChannelHandler传下来的异常
+     */
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        //
     }
 
 }

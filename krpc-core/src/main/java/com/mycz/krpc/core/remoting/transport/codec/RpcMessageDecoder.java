@@ -29,15 +29,22 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
     }
 
     @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        try {
+            super.channelRead(ctx, msg);
+        } catch (Exception e) {
+            log.error("[RpcMessageDecoder][ChannelRead] - ", e);
+//            ctx.fireExceptionCaught(e);
+        }
+    }
+
+    @Override
     protected Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
         Object decoded = super.decode(ctx, in);
         if (decoded instanceof ByteBuf frame) {
             if (frame.readableBytes() >= 16) {
                 try {
                     return decodeFrame(frame);
-                } catch (Exception e) {
-                    log.error("Decode frame error!", e);
-                    throw e;
                 } finally {
                     frame.release();
                 }
@@ -66,10 +73,14 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
         byte[] decompressBody = new GzipCompress().decompress(body);
 
         Object data = null;
-        if (RpcConstants.REQUEST_TYPE == rpcMessage.getMessageType()) {
-            data = new KryoSerializer().deserialize(decompressBody, RpcRequest.class);
-        } else if (RpcConstants.RESPONSE_TYPE == rpcMessage.getMessageType()) {
-            data = new KryoSerializer().deserialize(decompressBody, RpcResponse.class);
+        try {
+            if (RpcConstants.REQUEST_TYPE == rpcMessage.getMessageType()) {
+                data = new KryoSerializer().deserialize(decompressBody, RpcRequest.class);
+            } else if (RpcConstants.RESPONSE_TYPE == rpcMessage.getMessageType()) {
+                data = new KryoSerializer().deserialize(decompressBody, RpcResponse.class);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         rpcMessage.setData(data);
@@ -87,5 +98,6 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
             }
         }
     }
+
 
 }
