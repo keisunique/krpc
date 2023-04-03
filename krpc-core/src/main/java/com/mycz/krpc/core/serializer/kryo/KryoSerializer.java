@@ -15,7 +15,7 @@ import java.io.ByteArrayOutputStream;
 
 @Slf4j
 public class KryoSerializer implements Serializer {
-
+    
     /**
      * kryo非线程安全，所以使用ThreadLocal来维护一份kryo实例
      */
@@ -24,22 +24,22 @@ public class KryoSerializer implements Serializer {
         kryo.setRegistrationRequired(false);//默认值为true，避免版本变化显式设置
         kryo.setReferences(true);//检测循环依赖，默认值为true,避免版本变化显式设置
         kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
-        ((DefaultInstantiatorStrategy) kryo.getInstantiatorStrategy())
-                .setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());//设定默认的实例化器
+        ((DefaultInstantiatorStrategy) kryo.getInstantiatorStrategy()).setFallbackInstantiatorStrategy(new StdInstantiatorStrategy());//设定默认的实例化器
         return kryo;
     });
 
     @Override
     public byte[] serialize(Object obj) {
-        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-             Output output = new Output(byteArrayOutputStream)) {
+        try (ByteArrayOutputStream arrayOs = new ByteArrayOutputStream()) {
+            Output output = new Output(arrayOs);
             Kryo kryo = kryoThreadLocal.get();
             kryo.writeObjectOrNull(output, obj, obj.getClass());
-            kryoThreadLocal.remove();
-            return output.toBytes();
+            output.flush();
+            return arrayOs.toByteArray();
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new SerializeException("Serialization failed");
+            throw new SerializeException("序列化失败: " + e.getMessage(), e);
+        } finally {
+            kryoThreadLocal.remove();
         }
     }
 
@@ -48,12 +48,11 @@ public class KryoSerializer implements Serializer {
         try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
              Input input = new Input(byteArrayInputStream)) {
             Kryo kryo = kryoThreadLocal.get();
-            Object o = kryo.readObject(input, clazz);
-            kryoThreadLocal.remove();
-            return clazz.cast(o);
+            return clazz.cast(kryo.readObject(input, clazz));
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new SerializeException("Deserialization failed");
+            throw new SerializeException("反序列化失败: " + e.getMessage(), e);
+        } finally {
+            kryoThreadLocal.remove();
         }
     }
 

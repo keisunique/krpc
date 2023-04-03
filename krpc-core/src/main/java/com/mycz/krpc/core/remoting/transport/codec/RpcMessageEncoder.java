@@ -17,8 +17,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class RpcMessageEncoder extends MessageToByteEncoder<RpcMessage> {
 
-    private static final AtomicInteger ATOMIC_INTEGER = new AtomicInteger(0);
-
     @Override
     protected void encode(ChannelHandlerContext ctx, RpcMessage rpcMessage, ByteBuf out) {
         try {
