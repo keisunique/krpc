@@ -2,7 +2,6 @@ package com.mycz.krpc.stater.gateway.annotation;
 
 import com.mycz.arch.common.gateway.RequestMethod;
 import com.mycz.krpc.stater.config.RpcReferenceRegistrar;
-import com.mycz.krpc.stater.gateway.MappingPrefix;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.*;
@@ -31,7 +30,7 @@ public @interface RequestMapping {
     /**
      * 请求路径前缀
      */
-    MappingPrefix prefix() default MappingPrefix.MAPI;
+    String prefix() default "";
 
     /**
      * 是否检查访问权限

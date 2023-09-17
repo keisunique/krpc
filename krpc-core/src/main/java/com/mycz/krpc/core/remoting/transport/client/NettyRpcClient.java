@@ -15,6 +15,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -43,6 +44,9 @@ public class NettyRpcClient {
         NioEventLoopGroup workerGroup = new NioEventLoopGroup();
 
         bootstrap.group(workerGroup) // 1.指定线程模型
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000) // 设置连接超时时间
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.TCP_NODELAY, true)
                 .channel(NioSocketChannel.class) // 2.指定 IO 类型为 NIO
                 .handler(new ChannelInitializer<SocketChannel>() { // 3.IO 处理逻辑
                     @Override
@@ -62,6 +66,7 @@ public class NettyRpcClient {
 
         CompletableFuture<RpcResponse<Object>> resultFuture = new CompletableFuture<>();
         Channel channel = getChannel(new InetSocketAddress(service.getAddress(), service.getPort()));
+
         if (channel.isActive()) {
             // 携带上下文和ip
             rpcRequest.setContext(new HashMap<>(ApplicationContext.getContext()));

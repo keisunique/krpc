@@ -44,7 +44,7 @@ public class ConsulServiceRegistry implements ServiceRegistry {
         String serviceId = serviceName + "." + RandomKit.randomString(RandomKit.CS_LOWERCASE_LETTER + RandomKit.CS_NUMBER, 12);
         service.setId(serviceId);
         service.setName(serviceName);
-        service.setAddress(address.getHostName());
+        service.setAddress(address.getAddress().getHostAddress());
         service.setPort(address.getPort());
 
         // 心态检查配置

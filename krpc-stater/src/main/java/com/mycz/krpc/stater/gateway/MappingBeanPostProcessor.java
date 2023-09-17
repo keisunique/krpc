@@ -77,7 +77,7 @@ public class MappingBeanPostProcessor implements BeanPostProcessor {
             MappingEntity entity = MappingEntity.builder()
                     .name(mapping.name())
                     .method(mapping.method())
-                    .path("/" + mapping.prefix().getPrefix() + mapping.path())
+                    .path("/" + mapping.prefix() + mapping.path())
                     .authority(mapping.authority())
                     .description(mapping.description())
                     .createTime(new Date())
@@ -90,7 +90,7 @@ public class MappingBeanPostProcessor implements BeanPostProcessor {
                     .build();
 
             // 写入consul
-            client.setKVValue("/" + mapping.prefix().getPrefix() + mapping.path() + "/" + mapping.method(), JsonKit.toPrettyJson(entity));
+            client.setKVValue("/" + mapping.prefix() + mapping.path() + "/" + mapping.method(), JsonKit.toPrettyJson(entity));
         }
     }
 }

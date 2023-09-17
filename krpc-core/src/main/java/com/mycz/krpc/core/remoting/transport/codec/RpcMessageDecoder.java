@@ -40,6 +40,7 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
 
     @Override
     protected Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
+        long begin = System.currentTimeMillis();
         Object decoded = super.decode(ctx, in);
         if (decoded instanceof ByteBuf frame) {
             if (frame.readableBytes() >= 16) {

@@ -1,6 +1,5 @@
 package com.mycz.krpc.core.remoting.transport.client;
 
-import com.esotericsoftware.minlog.Log;
 import com.mycz.krpc.core.remoting.entity.RpcMessage;
 import com.mycz.krpc.core.remoting.entity.RpcResponse;
 import lombok.extern.slf4j.Slf4j;

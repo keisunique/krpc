@@ -5,6 +5,7 @@ import lombok.Getter;
 /**
  * 请求路径前缀
  */
+@Deprecated
 public enum MappingPrefix {
 
     MAPI("mapi"),
