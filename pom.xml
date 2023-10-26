@@ -5,7 +5,7 @@
 
     <groupId>com.mycz</groupId>
     <artifactId>krpc</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>krpc</name>
     <packaging>pom</packaging>
 
@@ -25,7 +25,7 @@
         <dependency>
             <groupId>com.mycz</groupId>
             <artifactId>mycz-arch-common</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>
@@ -51,13 +51,5 @@
             </plugin>
         </plugins>
     </build>
-
-    <distributionManagement>
-        <repository>
-            <id>rdc-snapshots</id>
-            <name>rdc-snapshots</name>
-            <url>https://packages.aliyun.com/maven/repository/2416046-snapshot-YceWCM/</url>
-        </repository>
-    </distributionManagement>
 
 </project>

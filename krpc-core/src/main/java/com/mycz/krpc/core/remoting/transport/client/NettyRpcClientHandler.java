@@ -15,7 +15,7 @@ import java.io.IOException;
 public class NettyRpcClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         try {
             if (msg instanceof RpcMessage tmp) {
                 byte messageType = tmp.getMessageType();
@@ -39,8 +39,11 @@ public class NettyRpcClientHandler extends ChannelInboundHandlerAdapter {
      * 处理上一个ChannelHandler传下来的异常
      */
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        //
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        // 记录日志
+        cause.printStackTrace();
+        // 关闭连接
+        ctx.close();
     }
 
 }

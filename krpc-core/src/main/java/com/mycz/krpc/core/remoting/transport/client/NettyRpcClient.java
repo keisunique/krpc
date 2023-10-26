@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -111,7 +112,6 @@ public class NettyRpcClient {
         return channel;
     }
 
-    @SneakyThrows
     public Channel doConnect(InetSocketAddress inetSocketAddress) {
         CompletableFuture<Channel> completableFuture = new CompletableFuture<>();
         bootstrap.connect(inetSocketAddress).addListener((ChannelFutureListener) future -> {
@@ -121,7 +121,15 @@ public class NettyRpcClient {
                 throw new IllegalStateException();
             }
         });
-        return completableFuture.get();
+
+        Channel channel;
+        try {
+            channel = completableFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+
+        return channel;
     }
 
 }

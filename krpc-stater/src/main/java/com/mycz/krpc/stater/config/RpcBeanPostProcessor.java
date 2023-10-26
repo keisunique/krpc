@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Proxy;
@@ -17,6 +19,8 @@ public class RpcBeanPostProcessor implements BeanPostProcessor {
 
     @Autowired
     private RpcProperties rpcProperties;
+
+    private KrpcApplication krpcApplication;
 
     /**
      * 扫描到有@KrpcService注解时, 获取配置, 然后启动rpc服务
@@ -34,9 +38,17 @@ public class RpcBeanPostProcessor implements BeanPostProcessor {
             registry.setAddress(rpcProperties.getRegistry().getAddress());
             config.setRegistry(registry);
 
-            new KrpcApplication(config).start();
+            krpcApplication = new KrpcApplication(config);
         }
         return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
+    }
+
+    /**
+     * spring服务启动完成后启动RPC服务
+     */
+    @EventListener
+    public void handleContextRefreshed(ContextRefreshedEvent event) {
+        krpcApplication.start();
     }
 
     /**

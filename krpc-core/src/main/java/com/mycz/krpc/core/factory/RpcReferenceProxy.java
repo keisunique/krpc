@@ -8,6 +8,7 @@ import com.mycz.krpc.core.remoting.transport.client.NettyRpcClient;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class RpcReferenceProxy {
 
@@ -29,7 +30,7 @@ public class RpcReferenceProxy {
 
         NettyRpcClient client = ApplicationContext.getInstance(NettyRpcClient.class);
         CompletableFuture<RpcResponse<Object>> future = client.sendRpcRequest(rpcRequest);
-        return future.get().getData();
+        return future.get(5, TimeUnit.SECONDS).getData();
     }
 
 }

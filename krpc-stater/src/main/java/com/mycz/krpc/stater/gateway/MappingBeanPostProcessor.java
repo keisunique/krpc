@@ -73,11 +73,16 @@ public class MappingBeanPostProcessor implements BeanPostProcessor {
                 return;
             }
 
+            String path =  mapping.prefix() + mapping.path();
+            if (!path.startsWith("/")) {
+                path = "/" + path;
+            }
+
             // 构造映射路径信息
             MappingEntity entity = MappingEntity.builder()
                     .name(mapping.name())
                     .method(mapping.method())
-                    .path("/" + mapping.prefix() + mapping.path())
+                    .path(path)
                     .authority(mapping.authority())
                     .description(mapping.description())
                     .createTime(new Date())

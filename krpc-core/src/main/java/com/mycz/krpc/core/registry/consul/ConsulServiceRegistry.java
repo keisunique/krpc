@@ -38,7 +38,6 @@ public class ConsulServiceRegistry implements ServiceRegistry {
      */
     @Override
     public ServiceRegisterResult register(String serviceName, InetSocketAddress address) {
-
         // 服务基础信息
         NewService service = new NewService();
         String serviceId = serviceName + "." + RandomKit.randomString(RandomKit.CS_LOWERCASE_LETTER + RandomKit.CS_NUMBER, 12);

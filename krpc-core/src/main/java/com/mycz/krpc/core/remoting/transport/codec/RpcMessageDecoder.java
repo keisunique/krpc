@@ -29,18 +29,18 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
         try {
             super.channelRead(ctx, msg);
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("[RpcMessageDecoder][ChannelRead] - ", e);
-//            ctx.fireExceptionCaught(e);
+            ctx.fireExceptionCaught(e);
         }
     }
 
     @Override
     protected Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
-        long begin = System.currentTimeMillis();
         Object decoded = super.decode(ctx, in);
         if (decoded instanceof ByteBuf frame) {
             if (frame.readableBytes() >= 16) {
@@ -54,7 +54,7 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
         return decoded;
     }
 
-    private Object decodeFrame(ByteBuf in) {
+    private Object decodeFrame(ByteBuf in) throws Exception {
         // 检查魔数
         checkMagicNumber(in);
 
@@ -89,7 +89,8 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
         return rpcMessage;
     }
 
-    private void checkMagicNumber(ByteBuf in) {
+    private void checkMagicNumber(ByteBuf in) throws Exception {
+//        throw new ClassNotFoundException();
         int len = RpcConstants.MAGIC_NUMBER.length;
         byte[] tmp = new byte[len];
         in.readBytes(tmp);
@@ -100,5 +101,8 @@ public class RpcMessageDecoder extends LengthFieldBasedFrameDecoder {
         }
     }
 
-
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        ctx.fireChannelRead(cause);
+    }
 }

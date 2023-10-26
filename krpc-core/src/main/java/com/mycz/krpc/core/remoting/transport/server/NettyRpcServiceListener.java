@@ -26,7 +26,6 @@ public class NettyRpcServiceListener implements ChannelFutureListener {
             // 注册服务
             RpcConfig rpcConfig = ApplicationContext.getInstance(RpcConfig.class);
             rpcConfig.setPort(socketAddress.getPort());
-
             if (rpcConfig.getRegistry().getEnable()) {
                 this.register(rpcConfig.getName(), rpcConfig.getHost(), rpcConfig.getPort());
             }
