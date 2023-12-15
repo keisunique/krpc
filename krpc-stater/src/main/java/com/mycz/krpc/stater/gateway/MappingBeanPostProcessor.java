@@ -1,13 +1,15 @@
 package com.mycz.krpc.stater.gateway;
 
 import com.ecwid.consul.v1.ConsulClient;
-import com.mycz.arch.common.gateway.MappingEntity;
+import com.esotericsoftware.minlog.Log;
 import com.mycz.arch.common.util.JsonKit;
 import com.mycz.arch.common.util.StringKit;
 import com.mycz.krpc.core.annotation.KrpcReference;
 import com.mycz.krpc.stater.config.RpcProperties;
 import com.mycz.krpc.stater.gateway.annotation.RequestMapping;
 import com.mycz.krpc.stater.gateway.annotation.RequestMappings;
+import com.mycz.krpc.stater.gateway.entity.MappingEntity;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -16,6 +18,7 @@ import javax.annotation.PostConstruct;
 import java.lang.reflect.Method;
 import java.util.Date;
 
+@Slf4j
 public class MappingBeanPostProcessor implements BeanPostProcessor {
 
     private ConsulClient client;
@@ -31,13 +34,11 @@ public class MappingBeanPostProcessor implements BeanPostProcessor {
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-
         return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
     }
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-
         Class<?>[] interfaces = bean.getClass().getInterfaces();
         Class<?> ifcc = null;
         for (Class<?> anInterface : interfaces) {
@@ -73,7 +74,7 @@ public class MappingBeanPostProcessor implements BeanPostProcessor {
                 return;
             }
 
-            String path =  mapping.prefix() + mapping.path();
+            String path = mapping.path();
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }
@@ -85,6 +86,8 @@ public class MappingBeanPostProcessor implements BeanPostProcessor {
                     .path(path)
                     .authority(mapping.authority())
                     .description(mapping.description())
+                    .responseType(mapping.responseType())
+                    .deliverPayload(mapping.deliverPayload())
                     .createTime(new Date())
                     .service(MappingEntity.Service.builder()
                             .name(rpcProperties.getName())
@@ -95,7 +98,10 @@ public class MappingBeanPostProcessor implements BeanPostProcessor {
                     .build();
 
             // 写入consul
-            client.setKVValue("/" + mapping.prefix() + mapping.path() + "/" + mapping.method(), JsonKit.toPrettyJson(entity));
+            if (path.startsWith("/")) {
+                path = path.replaceFirst("/", "");
+            }
+            client.setKVValue(path + "/" + mapping.method(), JsonKit.toPrettyJson(entity));
         }
     }
 }

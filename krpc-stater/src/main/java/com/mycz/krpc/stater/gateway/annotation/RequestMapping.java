@@ -42,4 +42,14 @@ public @interface RequestMapping {
      */
     String description() default "";
 
+    /**
+     * 响应类型
+     */
+    ResponseType responseType() default ResponseType.API;
+
+    /**
+     * 是否传递原始http请求体
+     */
+    boolean deliverPayload() default false;
+
 }

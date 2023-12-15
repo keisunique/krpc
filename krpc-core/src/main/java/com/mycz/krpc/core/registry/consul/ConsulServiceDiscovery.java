@@ -26,8 +26,7 @@ public class ConsulServiceDiscovery implements ServiceDiscovery {
         String ipPort = address.substring("consul://".length());
         client = new ConsulClient(ipPort.split(":")[0], Integer.parseInt(ipPort.split(":")[1]));
     }
-
-
+    
     @Override
     public ServiceDiscoveryResult discovery(String serviceName) throws Exception {
         List<ServiceDiscoveryResult> serviceList = new ArrayList<>();

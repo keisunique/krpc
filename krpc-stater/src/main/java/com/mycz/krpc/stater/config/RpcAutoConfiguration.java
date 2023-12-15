@@ -4,6 +4,7 @@ import com.mycz.krpc.stater.gateway.MappingBeanPostProcessor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 @EnableConfigurationProperties({RpcProperties.class, RpcProperties.Registry.class, RpcProperties.Config.class})
 @Configuration(proxyBeanMethods = false)

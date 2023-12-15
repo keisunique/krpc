@@ -118,7 +118,7 @@ public class NettyRpcClient {
             if (future.isSuccess()) {
                 completableFuture.complete(future.channel());
             } else {
-                throw new IllegalStateException();
+                completableFuture.completeExceptionally(future.cause());
             }
         });
 
