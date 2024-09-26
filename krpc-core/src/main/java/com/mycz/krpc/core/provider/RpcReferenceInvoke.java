@@ -28,4 +28,8 @@ public class RpcReferenceInvoke {
         INTERFACE_MAP.put(tclass.getName(), obj);
     }
 
+    public static int getInterfaceSize() {
+        return INTERFACE_MAP.size();
+    }
+
 }

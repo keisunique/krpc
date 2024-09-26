@@ -1,5 +1,6 @@
 package com.mycz.krpc.core.remoting.transport.client;
 
+import com.mycz.arch.common.util.JsonKit;
 import com.mycz.arch.common.util.RandomKit;
 import com.mycz.arch.common.util.StringKit;
 import com.mycz.krpc.core.factory.ApplicationContext;

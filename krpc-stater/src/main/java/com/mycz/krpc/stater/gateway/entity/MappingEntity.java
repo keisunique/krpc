@@ -32,6 +32,8 @@ public class MappingEntity {
     private ResponseType responseType = ResponseType.API;
     // 是否传递原始http请求体
     private boolean deliverPayload = false;
+    // 是否传递原始请求参数
+    private boolean deliverParams = false;
 
     // 创建时间
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")

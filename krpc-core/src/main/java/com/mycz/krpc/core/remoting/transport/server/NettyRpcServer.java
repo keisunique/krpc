@@ -36,7 +36,6 @@ public class NettyRpcServer {
                 ThreadPoolFactoryUtil.createThreadFactory("service-handler-group", false)
         );
 
-        log.info("*** krpc - 开始启动");
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)

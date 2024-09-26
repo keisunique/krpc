@@ -1,5 +1,6 @@
 package com.mycz.krpc.core.remoting.transport.server;
 
+import com.mycz.arch.common.util.JsonKit;
 import com.mycz.krpc.core.factory.ApplicationContext;
 import com.mycz.krpc.core.provider.RpcReferenceInvoke;
 import com.mycz.krpc.core.remoting.entity.RpcConstants;
@@ -56,7 +57,7 @@ public class NettyRpcServerHandler extends ChannelInboundHandlerAdapter {
                             ThreadContext.remove("TRACE_ID");
                         }
                     } else {
-                        log.error("非法rpc请求内容");
+                        log.error("非法rpc请求内容, {}", JsonKit.toJson(data));
                     }
                     rpcMessage.setMessageType(RpcConstants.RESPONSE_TYPE);
                     ctx.writeAndFlush(rpcMessage).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);

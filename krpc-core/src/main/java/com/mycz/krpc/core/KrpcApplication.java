@@ -37,9 +37,9 @@ public class KrpcApplication {
      */
     public void start() {
         // 1. 校验并填充配置项
-        checkAndFillRpcConfig();
+        this.checkAndFillRpcConfig();
         // 2.
-        initApplicationContext();
+        this.initApplicationContext();
         // 3. 启动服务
         new NettyRpcServer().start();
     }

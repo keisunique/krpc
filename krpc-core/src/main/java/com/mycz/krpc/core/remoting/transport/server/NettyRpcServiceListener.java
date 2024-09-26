@@ -18,10 +18,9 @@ public class NettyRpcServiceListener implements ChannelFutureListener {
     @Override
     public void operationComplete(ChannelFuture future) throws Exception {
         if (future.isSuccess()) {
-            log.info("*** krpc - 启动成功");
-
             InetSocketAddress socketAddress = (InetSocketAddress) future.channel().localAddress();
-            log.info("*** krpc - 端口: {}", socketAddress.getPort());
+
+            log.info("*** krpc - 启动成功, 端口: {}", socketAddress.getPort());
 
             // 注册服务
             RpcConfig rpcConfig = ApplicationContext.getInstance(RpcConfig.class);

@@ -1,6 +1,5 @@
 package com.mycz.krpc.stater.config;
 
-import com.mycz.arch.common.exception.BusinessException;
 import com.mycz.krpc.core.annotation.KrpcReference;
 import com.mycz.krpc.core.factory.RpcReferenceProxy;
 import org.springframework.beans.factory.FactoryBean;

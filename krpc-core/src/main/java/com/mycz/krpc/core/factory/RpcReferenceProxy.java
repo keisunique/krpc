@@ -5,9 +5,7 @@ import com.mycz.krpc.core.remoting.entity.RpcRequest;
 import com.mycz.krpc.core.remoting.entity.RpcResponse;
 import com.mycz.krpc.core.remoting.transport.client.NettyRpcClient;
 
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class RpcReferenceProxy {

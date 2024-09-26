@@ -48,7 +48,7 @@ public class ConsulServiceRegistry implements ServiceRegistry {
 
         // 心态检查配置
         NewService.Check check = new NewService.Check();
-        check.setTcp(address.getHostName() + ":" + address.getPort());
+        check.setTcp(address.getAddress().getHostAddress() + ":" + address.getPort());
         check.setTimeout(TIME_OUT);
         check.setInterval(INTERVAL);
         service.setCheck(check);
@@ -60,7 +60,7 @@ public class ConsulServiceRegistry implements ServiceRegistry {
             System.exit(-1);
         }
 
-        log.info("*** 服务注册成功 - 服务名ID:{}, 地址:{}:{} ", serviceId, address.getHostName(), address.getPort());
+        log.info("*** 服务注册成功 - 服务名ID:{}, 地址:{}:{} ", serviceId, address.getAddress().getHostAddress(), address.getPort());
         return ServiceRegisterResult.builder().id(serviceId).build();
     }
 

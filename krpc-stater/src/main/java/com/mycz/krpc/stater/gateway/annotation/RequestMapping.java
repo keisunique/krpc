@@ -52,4 +52,9 @@ public @interface RequestMapping {
      */
     boolean deliverPayload() default false;
 
+    /**
+     * 是否床底原始请求参数
+     */
+    boolean deliverParams() default false;
+
 }
