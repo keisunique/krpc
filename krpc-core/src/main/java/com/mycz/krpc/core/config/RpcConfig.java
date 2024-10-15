@@ -14,12 +14,9 @@ public class RpcConfig {
      */
     @Data
     public static class Registry {
-        // 是否需要注册服务
-        private Boolean enable;
-        // 地址
-        private String address;
-        // 注册id
-        private String id;
+        private Boolean enable; // 是否需要注册服务
+        private String address; // 地址
+        private String id; // 注册id
     }
 
 }
