@@ -11,7 +11,6 @@ import com.mycz.krpc.stater.gateway.annotation.RequestMapping;
 import com.mycz.krpc.stater.gateway.annotation.RequestMappings;
 import com.mycz.krpc.stater.gateway.entity.MappingEntity;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -19,12 +18,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 @Slf4j
 @EnableConfigurationProperties({RpcProperties.class, RpcProperties.Registry.class, RpcProperties.Config.class})
@@ -39,7 +35,6 @@ public class RpcAutoConfiguration {
     @EventListener
     public void handleRequestMapping(ContextRefreshedEvent event) {
         ApplicationContext applicationContext = event.getApplicationContext();
-
 
     }
 
@@ -105,6 +100,7 @@ public class RpcAutoConfiguration {
         RpcConfig.Registry registry = new RpcConfig.Registry();
         registry.setEnable(rpcProperties.getRegistry().getEnable());
         registry.setAddress(rpcProperties.getRegistry().getAddress());
+        registry.setServiceIP(rpcProperties.getRegistry().getServiceIP());
         config.setRegistry(registry);
 
         new KrpcApplication(config).start();
@@ -127,6 +123,7 @@ public class RpcAutoConfiguration {
                     .method(mapping.method())
                     .path(path)
                     .authority(mapping.authority())
+                    .authorityType(mapping.authorityType())
                     .description(mapping.description())
                     .responseType(mapping.responseType())
                     .deliverPayload(mapping.deliverPayload())

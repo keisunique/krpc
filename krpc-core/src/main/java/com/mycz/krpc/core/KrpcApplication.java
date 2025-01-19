@@ -90,6 +90,9 @@ public class KrpcApplication {
                 throw new IllegalArgumentException("`krpc:registry:address` 必填");
             }
         }
+        if (StringKit.isBlank(registry.getServiceIP())) {
+            registry.setServiceIP(rpcConfig.getHost());
+        }
 
     }
 

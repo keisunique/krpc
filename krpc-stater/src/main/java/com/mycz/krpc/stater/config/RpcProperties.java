@@ -29,7 +29,8 @@ public class RpcProperties {
     @ConfigurationProperties("krpc.registry")
     public static class Registry {
         private Boolean enable;
-        private String address;
+        private String address; // 注册中心的地址
+        private String serviceIP; // 服务访问地址, 如需公网访问时可配置此项
     }
 
     /**

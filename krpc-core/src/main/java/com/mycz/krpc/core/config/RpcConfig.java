@@ -17,6 +17,7 @@ public class RpcConfig {
         private Boolean enable; // 是否需要注册服务
         private String address; // 地址
         private String id; // 注册id
+        private String serviceIP;
     }
 
 }

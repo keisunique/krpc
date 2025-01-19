@@ -26,7 +26,14 @@ public class NettyRpcServiceListener implements ChannelFutureListener {
             RpcConfig rpcConfig = ApplicationContext.getInstance(RpcConfig.class);
             rpcConfig.setPort(socketAddress.getPort());
             if (rpcConfig.getRegistry().getEnable()) {
-                this.register(rpcConfig.getName(), rpcConfig.getHost(), rpcConfig.getPort());
+                Thread.ofVirtual().start(() -> {
+                    try {
+                        Thread.sleep(3000);
+                    } catch (Exception e) {
+                        log.error("系统错误", e);
+                    }
+                    this.register(rpcConfig.getName(), rpcConfig.getRegistry().getServiceIP(), rpcConfig.getPort());
+                });
             }
         } else {
             throw new Exception("*** krpc - 启动失败");

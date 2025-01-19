@@ -51,13 +51,6 @@
             <version>3.3.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.mycz</groupId>
-            <artifactId>mycz-arch-api</artifactId>
-            <version>1.0.0</version>
-            <scope>provided</scope>
-        </dependency>
     </dependencies>
-
 
 </project>

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.mycz.arch.common.gateway.RequestMethod;
+import com.mycz.krpc.stater.gateway.annotation.AuthorityType;
 import com.mycz.krpc.stater.gateway.annotation.ResponseType;
 import lombok.*;
 
@@ -24,6 +25,8 @@ public class MappingEntity {
     private RequestMethod method;
     // 是否需要权限
     private boolean authority;
+    // 认证类型
+    private AuthorityType authorityType;
     // 服务
     private Service service;
     // 描述

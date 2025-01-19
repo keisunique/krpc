@@ -2,6 +2,7 @@ package com.mycz.krpc.stater.config;
 
 import com.mycz.krpc.core.annotation.KrpcReference;
 import com.mycz.krpc.core.factory.RpcReferenceProxy;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.FactoryBean;
 
 import java.lang.reflect.InvocationHandler;
@@ -9,6 +10,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.TimeoutException;
 
+@Slf4j
 public class KrpcReferenceFactoryBean implements FactoryBean<Object>, InvocationHandler {
 
     //要代理的对象
@@ -43,6 +45,7 @@ public class KrpcReferenceFactoryBean implements FactoryBean<Object>, Invocation
         } catch (TimeoutException e) {
             throw new Exception("服务调用请求超时");
         } catch (Exception e) {
+            log.error("服务调用异常", e);
             throw new Exception("服务调用异常");
         }
 

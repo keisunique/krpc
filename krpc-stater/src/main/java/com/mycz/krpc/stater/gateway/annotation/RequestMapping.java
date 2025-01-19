@@ -38,6 +38,11 @@ public @interface RequestMapping {
     boolean authority() default true;
 
     /**
+     * 权限类型
+     */
+    AuthorityType authorityType() default AuthorityType.BEARER_TOKEN;
+
+    /**
      * 方法描述
      */
     String description() default "";
