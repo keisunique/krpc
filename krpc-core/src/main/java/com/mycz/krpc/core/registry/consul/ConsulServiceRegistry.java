@@ -8,6 +8,9 @@ import com.mycz.krpc.core.registry.ServiceRegistry;
 import com.mycz.krpc.core.registry.entity.ServiceRegisterResult;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 
 @Slf4j
@@ -53,6 +56,23 @@ public class ConsulServiceRegistry implements ServiceRegistry {
         check.setInterval(INTERVAL);
         service.setCheck(check);
 
+        // 生成服务文件
+        String fileName = serviceId + ".txt"; // 文件名
+        StringBuilder content = new StringBuilder();
+        content.append("service-id=").append(serviceId).append("\n");
+        content.append("port=").append(address.getPort()).append("\n");
+
+        // 创建文件对象
+        File file = new File(fileName);
+        try {
+            // 写入内容
+            FileWriter writer = new FileWriter(file);
+            writer.write(content.toString());
+            writer.close();
+        } catch (IOException e) {
+            System.out.println("发生错误：" + e.getMessage());
+        }
+
         try {
             client.agentServiceRegister(service);
         } catch (Exception e) {
@@ -72,4 +92,5 @@ public class ConsulServiceRegistry implements ServiceRegistry {
         log.info("*** 解除服务注册 - id:{}", serviceId);
         client.agentServiceDeregister(serviceId);
     }
+
 }
