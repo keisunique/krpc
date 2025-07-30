@@ -57,7 +57,7 @@ public class ConsulServiceRegistry implements ServiceRegistry {
         service.setCheck(check);
 
         // 生成服务文件
-        String fileName = serviceId + ".txt"; // 文件名
+        String fileName = "services-info.txt";
         StringBuilder content = new StringBuilder();
         content.append("service-id=").append(serviceId).append("\n");
         content.append("port=").append(address.getPort()).append("\n");
