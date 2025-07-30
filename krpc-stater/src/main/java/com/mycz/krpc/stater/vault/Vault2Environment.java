@@ -45,8 +45,11 @@ public class Vault2Environment implements EnvironmentPostProcessor {
                     LogicalResponse response = vault.logical().read(secretPath);
                     if (response != null && response.getData() != null) {
                         Map<String, String> rawData = response.getData();
+                        String pathPrefix = extractPathPrefix(secretPath);
                         rawData.forEach((key, value) -> {
-                            allProperties.put("vault." + key, value);
+                            String finalKey = StringUtils.hasText(pathPrefix) ? 
+                                "vault." + pathPrefix + "." + key : "vault." + key;
+                            allProperties.put(finalKey, value);
                         });
                     }
                 } catch (Exception e) {
@@ -88,5 +91,20 @@ public class Vault2Environment implements EnvironmentPostProcessor {
                 return new String[]{"secret/data/krpc"}; // 默认值
             }
         }
+    }
+
+    private String extractPathPrefix(String secretPath) {
+        if (!StringUtils.hasText(secretPath)) {
+            return "";
+        }
+        
+        // 处理路径格式，如 secret/data/mysql -> mysql, secret/mysql -> mysql
+        String[] parts = secretPath.split("/");
+        if (parts.length > 1) {
+            // 获取最后一个部分作为前缀
+            return parts[parts.length - 1];
+        }
+        
+        return secretPath;
     }
 }
