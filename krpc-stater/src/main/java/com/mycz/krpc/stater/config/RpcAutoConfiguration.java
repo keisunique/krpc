@@ -23,7 +23,11 @@ import java.lang.reflect.Proxy;
 import java.util.Date;
 
 @Slf4j
-@EnableConfigurationProperties({RpcProperties.class, RpcProperties.Registry.class, RpcProperties.Config.class})
+@EnableConfigurationProperties({
+        RpcProperties.class,
+        RpcProperties.Registry.class,
+        RpcProperties.Config.class,
+        RpcProperties.Vault.class})
 @Configuration(proxyBeanMethods = false)
 public class RpcAutoConfiguration {
 
@@ -35,7 +39,6 @@ public class RpcAutoConfiguration {
     @EventListener
     public void handleRequestMapping(ContextRefreshedEvent event) {
         ApplicationContext applicationContext = event.getApplicationContext();
-
     }
 
     @EventListener

@@ -20,6 +20,8 @@ public class RpcProperties {
     private Registry registry;
     // 配置中心
     private Config config;
+    // vault
+    private Vault vault;
 
 
     /**
@@ -41,6 +43,18 @@ public class RpcProperties {
     public static class Config {
         private Boolean enable;
         private String address;
+    }
+
+    /**
+     * Vault配置中心
+     */
+    @Data
+    @ConfigurationProperties("krpc.vault")
+    public static class Vault {
+        private Boolean enable = false;
+        private String url;
+        private String token;
+        private String[] secretPath = {"secret/data/krpc"};
     }
 
 }

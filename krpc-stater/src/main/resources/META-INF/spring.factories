@@ -1,2 +1,4 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 com.mycz.krpc.stater.config.RpcAutoConfiguration
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.mycz.krpc.stater.vault.Vault2Environment
