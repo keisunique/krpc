@@ -22,13 +22,18 @@ public class Vault2Environment implements EnvironmentPostProcessor {
             return;
         }
 
+        System.out.println("*** Vault初始化 - 开始");
+
         String vaultUrl = environment.getProperty("krpc.vault.url");
         String vaultToken = environment.getProperty("krpc.vault.token");
         String[] secretPaths = getSecretPaths(environment);
 
         if (!StringUtils.hasText(vaultUrl) || !StringUtils.hasText(vaultToken)) {
+            System.out.println("*** Vault初始化 - url或token缺失");
             return;
         }
+
+
 
         try {
             VaultConfig config = new VaultConfig()
@@ -41,16 +46,19 @@ public class Vault2Environment implements EnvironmentPostProcessor {
             Map<String, String> allProperties = new HashMap<>();
 
             for (String secretPath : secretPaths) {
+                System.out.printf("*** Vault初始化 - 加载路径%s%n", secretPath);
                 try {
                     LogicalResponse response = vault.logical().read(secretPath);
                     if (response != null && response.getData() != null) {
                         Map<String, String> rawData = response.getData();
+                        System.out.printf("*** Vault初始化 - 加载路径%s, %n", secretPath);
                         String pathPrefix = extractPathPrefix(secretPath);
                         rawData.forEach((key, value) -> {
                             String finalKey = StringUtils.hasText(pathPrefix) ? 
                                 "vault." + pathPrefix + "." + key : "vault." + key;
                             allProperties.put(finalKey, value);
                         });
+                        System.out.printf("*** Vault初始化 - 加载路径%s, 数量:%s %n", secretPath, rawData.size());
                     }
                 } catch (Exception e) {
                     log.error(e.getMessage(), e);
@@ -60,8 +68,11 @@ public class Vault2Environment implements EnvironmentPostProcessor {
             if (!allProperties.isEmpty()) {
                 VaultSource vaultPropertySource = new VaultSource("vault-properties", allProperties);
                 environment.getPropertySources().addFirst(vaultPropertySource);
+                System.out.printf("*** Vault初始化完成 - 加载配置完成,数量%s%n", allProperties.size());
             }
+            System.out.println("*** Vault初始化 - 完成");
         } catch (Exception e) {
+            System.out.println("*** Vault初始化 - 异常");
             e.printStackTrace();
         }
     }

@@ -7,6 +7,7 @@ import com.mycz.krpc.core.KrpcApplication;
 import com.mycz.krpc.core.annotation.KrpcReference;
 import com.mycz.krpc.core.config.RpcConfig;
 import com.mycz.krpc.core.provider.RpcReferenceInvoke;
+import com.mycz.krpc.stater.document.DocumentHelper;
 import com.mycz.krpc.stater.gateway.annotation.RequestMapping;
 import com.mycz.krpc.stater.gateway.annotation.RequestMappings;
 import com.mycz.krpc.stater.gateway.entity.MappingEntity;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -27,7 +29,9 @@ import java.util.Date;
         RpcProperties.class,
         RpcProperties.Registry.class,
         RpcProperties.Config.class,
-        RpcProperties.Vault.class})
+        RpcProperties.Vault.class,
+        RpcProperties.Document.class
+})
 @Configuration(proxyBeanMethods = false)
 public class RpcAutoConfiguration {
 
@@ -35,6 +39,20 @@ public class RpcAutoConfiguration {
     private RpcProperties rpcProperties;
 
     private ConsulClient client;
+
+
+    @EventListener
+    public void apiReport(ContextRefreshedEvent event) {
+        log.info("*** api文档处理开始!!!!   -----");
+        if (rpcProperties.getDocument().getEnable()) {
+            try {
+                new DocumentHelper(event.getApplicationContext()).report();
+            } catch (Throwable throwable) {
+                log.info("*** api文档处理失败!");
+            }
+        }
+    }
+
 
     @EventListener
     public void handleRequestMapping(ContextRefreshedEvent event) {

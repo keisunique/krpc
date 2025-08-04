@@ -6,6 +6,8 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @ConfigurationProperties(prefix = "krpc")
@@ -22,6 +24,8 @@ public class RpcProperties {
     private Config config;
     // vault
     private Vault vault;
+    // document
+    private Document document;
 
 
     /**
@@ -55,6 +59,16 @@ public class RpcProperties {
         private String url;
         private String token;
         private String[] secretPath = {"secret/data/krpc"};
+    }
+
+    /**
+     * api文档生成
+     */
+    @Data
+    @ConfigurationProperties("krpc.document")
+    public static class Document {
+        private Boolean enable = false;
+        private String url;
     }
 
 }
