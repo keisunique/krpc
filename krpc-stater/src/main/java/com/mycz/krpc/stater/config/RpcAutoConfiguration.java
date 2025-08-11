@@ -46,7 +46,7 @@ public class RpcAutoConfiguration {
         try {
             new DocumentHelper(event.getApplicationContext(), rpcProperties).report();
         } catch (Throwable throwable) {
-            log.info("*** api文档处理失败!");
+            log.error("*** api文档处理失败!", throwable);
         }
     }
 
