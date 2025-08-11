@@ -9,7 +9,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 // 定义注解可以应用的目标 - 类
 @Target({ElementType.TYPE})
-public @interface Api {
-    String tags() default "";
-    String description() default "";
+public @interface ApiTag {
+    String value() default "";
 }

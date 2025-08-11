@@ -43,13 +43,10 @@ public class RpcAutoConfiguration {
 
     @EventListener
     public void apiReport(ContextRefreshedEvent event) {
-        log.info("*** api文档处理开始!!!!   -----");
-        if (rpcProperties.getDocument().getEnable()) {
-            try {
-                new DocumentHelper(event.getApplicationContext()).report();
-            } catch (Throwable throwable) {
-                log.info("*** api文档处理失败!");
-            }
+        try {
+            new DocumentHelper(event.getApplicationContext(), rpcProperties).report();
+        } catch (Throwable throwable) {
+            log.info("*** api文档处理失败!");
         }
     }
 
