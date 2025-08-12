@@ -30,11 +30,6 @@ import java.util.Set;
 
 /**
  * 文档上报辅助类
- * <p>
- * 职责：
- * 1. 扫描指定包前缀下的 Spring Bean
- * 2. 解析方法上的网关注解 `RequestMapping` 及字段上的文档/校验注解
- * 3. 组装为 `ApiUploadReq` 结构并通过 HTTP 上报
  */
 @Slf4j
 public class DocumentHelper {
@@ -51,14 +46,11 @@ public class DocumentHelper {
 
     /**
      * 触发文档上报
-     * <p>
-     * 流程：校验开关和 URL -> 扫描 Bean -> 解析并收集接口信息 -> 发起 HTTP 上报
      */
     public void report() throws Exception {
         if (rpcProperties.getDocument() == null || !rpcProperties.getDocument().getEnable()) {
             return;
         }
-
         if (StringKit.isBlank(rpcProperties.getDocument().getUrl())) {
             log.warn("*** api接口上报url为空, 取消上报");
             return;
@@ -66,21 +58,19 @@ public class DocumentHelper {
 
         log.info("*** api接口上报 - 开始");
 
-        final String[] allBeanNames = applicationContext.getBeanDefinitionNames();
+        String[] beanNames = applicationContext.getBeanDefinitionNames();
+        ApiUploadReq uploadReq = new ApiUploadReq();
+        List<ApiUploadReq.Item> apis = new ArrayList<>();
+        uploadReq.setApiInfos(apis);
 
-        final ApiUploadReq uploadReq = new ApiUploadReq();
-        final List<ApiUploadReq.Item> allApis = new ArrayList<>();
-        uploadReq.setApiInfos(allApis);
-
-        for (String name : allBeanNames) {
-            Object impl = applicationContext.getBean(name);
-            if (!impl.getClass().getPackageName().startsWith("com.ttc.service.service")) {
+        for (String name : beanNames) {
+            Object bean = applicationContext.getBean(name);
+            if (!bean.getClass().getPackageName().startsWith("com.ttc.service.service")) {
                 continue;
             }
-
-            List<ApiUploadReq.Item> apis = this.processImplApi(impl);
-            if (apis != null && !apis.isEmpty()) {
-                allApis.addAll(apis);
+            List<ApiUploadReq.Item> list = processBean(bean);
+            if (list != null && !list.isEmpty()) {
+                apis.addAll(list);
             }
         }
 
@@ -89,284 +79,352 @@ public class DocumentHelper {
     }
 
     /**
-     * 处理单个 Bean，提取其对外暴露的接口信息
+     * 处理单个 Bean
      */
-    private List<ApiUploadReq.Item> processImplApi(Object impl) {
+    private List<ApiUploadReq.Item> processBean(Object bean) {
         try {
-            final Class<?> implClass = impl.getClass();
+            Class<?> clazz = bean.getClass();
 
-            // 获取服务名
-            final String serviceName = getImplServiceName(implClass);
+            String serviceName = getServiceNameFromInterfaces(clazz);
             if (StringKit.isBlank(serviceName)) {
                 return null;
             }
 
-            // 标签优先取 `@ApiTag`，否则用类名
-            final ApiTag apiTagAnno = implClass.getAnnotation(ApiTag.class);
-            String tag = apiTagAnno == null ? implClass.getSimpleName() : apiTagAnno.value();
+            ApiTag tagAnno = clazz.getAnnotation(ApiTag.class);
+            String tag = tagAnno == null ? clazz.getSimpleName() : tagAnno.value();
 
-            // 单个接口
-            final List<ApiUploadReq.Item> itemList = new ArrayList<>();
-            for (Method implMethod : implClass.getMethods()) {
-                // 遍历该方法上所有的 RequestMapping 注解
-
-                for (Annotation annotation : implMethod.getAnnotations()) {
+            List<ApiUploadReq.Item> list = new ArrayList<>();
+            for (Method method : clazz.getMethods()) {
+                Annotation[] annos = method.getAnnotations();
+                for (Annotation anno : annos) {
                     RequestMapping[] mappings = new RequestMapping[1];
-                    if (annotation instanceof RequestMapping) {
-                        mappings[0] = (RequestMapping) annotation;
-                    } else if ((annotation instanceof RequestMappings)) {
-                        mappings = ((RequestMappings) annotation).value();
+                    if (anno instanceof RequestMapping) {
+                        mappings[0] = (RequestMapping) anno;
+                    } else if (anno instanceof RequestMappings) {
+                        mappings = ((RequestMappings) anno).value();
                     } else {
                         continue;
                     }
 
-
                     for (RequestMapping mapping : mappings) {
-                        ApiUploadReq.Item item = new ApiUploadReq.Item();
-                        item.setServiceName(serviceName);
-                        item.setClassName(implClass.getName());
-                        item.setTag(tag);
-
+                        ApiUploadReq.Item api = new ApiUploadReq.Item();
+                        api.setServiceName(serviceName);
+                        api.setClassName(clazz.getName());
+                        api.setTag(tag);
                         try {
-                            item.setName(implMethod.getName());
-                            item.setMethod(((RequestMethod) getAnnotationValue(mapping, "method")).name());
-                            item.setPath(getStringFromAnnotation(mapping, "path"));
-                            item.setPrefix(getStringFromAnnotation(mapping, "prefix"));
+                            api.setName(method.getName());
+                            api.setMethod(((RequestMethod) getAnnotationValue(mapping, "method")).name());
+                            api.setPath((String) getAnnotationValue(mapping, "path"));
+                            api.setPrefix((String) getAnnotationValue(mapping, "prefix"));
+                            api.setAuthority(((Boolean) getAnnotationValue(mapping, "authority")) ? Bool.YES : Bool.NO);
+                            api.setAuthorityType(((AuthorityType) getAnnotationValue(mapping, "authorityType")).name());
+                            api.setDescription((String) getAnnotationValue(mapping, "description"));
+                            api.setResponseType(((ResponseType) getAnnotationValue(mapping, "responseType")).name());
+                            api.setDeliverPayload(((Boolean) getAnnotationValue(mapping, "deliverPayload")) ? Bool.YES : Bool.NO);
+                            api.setDeliverParams(((Boolean) getAnnotationValue(mapping, "deliverParams")) ? Bool.YES : Bool.NO);
 
-                            item.setAuthority(getBooleanFromAnnotation(mapping, "authority") ? Bool.YES : Bool.NO);
-                            item.setAuthorityType(((AuthorityType) getAnnotationValue(mapping, "authorityType")).name());
-                            item.setDescription(getStringFromAnnotation(mapping, "description"));
-                            item.setResponseType(((ResponseType) getAnnotationValue(mapping, "responseType")).name());
-
-                            item.setDeliverPayload(getBooleanFromAnnotation(mapping, "deliverPayload") ? Bool.YES : Bool.NO);
-                            item.setDeliverParams(getBooleanFromAnnotation(mapping, "deliverParams") ? Bool.YES : Bool.NO);
-
-                            // 接口参数
-                            populateParameterInfo(implMethod, item);
-
-                            itemList.add(item);
+                            fillParamsAndResponse(method, api);
+                            list.add(api);
                         } catch (Exception e) {
-                            throw new RuntimeException("Failed to process RequestMapping annotation for method: " + implMethod.getName(), e);
+                            throw new RuntimeException("Failed to process RequestMapping annotation for method: " + method.getName(), e);
                         }
                     }
                 }
             }
-            return itemList;
+            return list;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to process bean: " + impl.getClass().getName(), e);
+            throw new RuntimeException("Failed to process bean: " + bean.getClass().getName(), e);
         }
     }
 
     /**
-     * 反射读取注解方法值
+     * 读取注解方法值
      */
     private Object getAnnotationValue(Annotation annotation, String methodName) {
         try {
-            Method method = annotation.annotationType().getMethod(methodName);
-            return method.invoke(annotation);
+            Method m = annotation.annotationType().getMethod(methodName);
+            return m.invoke(annotation);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException("Failed to get annotation value for method: " + methodName, e);
         }
     }
 
-    private boolean getBooleanFromAnnotation(Annotation annotation, String methodName) {
-        return (Boolean) getAnnotationValue(annotation, methodName);
-    }
-
-    private String getStringFromAnnotation(Annotation annotation, String methodName) {
-        return (String) getAnnotationValue(annotation, methodName);
-    }
-
     /**
-     * 填充接口的参数与返回值相关信息
+     * 填充请求/响应信息
      */
-    private void populateParameterInfo(Method method, ApiUploadReq.Item item) {
+    private void fillParamsAndResponse(Method method, ApiUploadReq.Item api) {
         // 请求类名
-        Class<?>[] parameterTypes = method.getParameterTypes();
-        if (parameterTypes.length < 1) {
+        Class<?>[] paramTypes = method.getParameterTypes();
+        if (paramTypes.length < 1) {
             return;
         }
+        Type[] genericParamTypes = method.getGenericParameterTypes();
+        if (genericParamTypes.length > 0) {
+            Type gp = genericParamTypes[0];
+            if (gp instanceof ParameterizedType) {
+                api.setRequestClass(buildTypeDisplay(gp));
+            } else if (gp instanceof Class<?>) {
+                api.setRequestClass(((Class<?>) gp).getName());
+            } else {
+                api.setRequestClass(paramTypes[0].getName());
+            }
+        } else {
+            api.setRequestClass(paramTypes[0].getName());
+        }
 
-        item.setRequestClass(parameterTypes[0].getName());
-
-        // 响应类名（展示）与用于递归的组件类
-        Type genericReturnType = method.getGenericReturnType();
-        Class<?> responseComponentClass = null;
-        if (genericReturnType instanceof ParameterizedType parameterizedType) {
-            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-            if (actualTypeArguments.length > 0) {
-                Type arg = actualTypeArguments[0];
-                // 构建展示：List<String>/Set<User>/User/Object
-                String display = buildTypeArgumentDisplay(arg);
-                item.setResponseClass(display);
-                // 计算 data 字段用于递归的组件类（元素类或实体类）
-                responseComponentClass = resolveComponentClass(arg);
+        // 响应类展示与组件类
+        Type retGeneric = method.getGenericReturnType();
+        Class<?> componentClass = null;
+        if (retGeneric instanceof ParameterizedType pt) {
+            Type[] args = pt.getActualTypeArguments();
+            if (args.length > 0) {
+                Type arg = args[0];
+                api.setResponseClass(buildTypeDisplay(arg));
+                componentClass = resolveComponentClass(arg);
             }
         }
 
-        // 请求参数,响应参数
         List<ApiUploadReq.Item.Params> params = new ArrayList<>();
-        populateRequestFields(parameterTypes, params);
-        Set<String> visited = new HashSet<>();
-        populateResponseFields(params, method.getReturnType().getDeclaredFields(), null, item, visited, responseComponentClass);
-        item.setParams(params);
+
+        // 请求参数字段
+        for (int i = 0; i < paramTypes.length; i++) {
+            Class<?> pType = paramTypes[i];
+            Type gpt = (genericParamTypes.length > i) ? genericParamTypes[i] : null;
+
+            // 若参数本身为泛型容器，且泛型为自定义类，则直接解析该自定义类的字段
+            if (gpt instanceof ParameterizedType pt0 && pt0.getActualTypeArguments().length > 0) {
+                Class<?> comp = resolveComponentClass(pt0.getActualTypeArguments()[0]);
+                if (comp != null && isCustomEntityClass(comp)) {
+                    Set<String> seenReq = new HashSet<>();
+                    collectRequestFields(params, comp.getDeclaredFields(), null, seenReq);
+                    continue;
+                }
+            }
+
+            // 否则按原始请求对象的字段解析
+            Field[] fields = pType.getDeclaredFields();
+            for (Field f : fields) {
+                ApiUploadReq.Item.Params p = new ApiUploadReq.Item.Params();
+                p.setField(StringKit.camelToUnderline(f.getName()));
+                p.setType("request");
+                p.setFieldClass(buildFieldClassDisplay(f, f.getType()));
+                // 注解处理：描述与必填
+                Annotation[] fAnnos = f.getAnnotations();
+                for (Annotation a : fAnnos) {
+                    if (a instanceof ApiModelProperty) {
+                        p.setDescription((String) getAnnotationValue(a, "value"));
+                    } else if (a instanceof NotNull || a instanceof NotBlank || a instanceof NotEmpty) {
+                        p.setRequired(Bool.YES);
+                    } else if (a instanceof Range || a instanceof Email || a instanceof Length || a instanceof Mobile || a instanceof SetOf || a instanceof Size) {
+                        Boolean required = null;
+                        try {
+                            required = (Boolean) getAnnotationValue(a, "required");
+                        } catch (Exception ignore) {
+                            // 某些注解无 required 属性
+                        }
+                        if (required != null) {
+                            p.setRequired(required ? Bool.YES : Bool.NO);
+                        }
+                    }
+                }
+                params.add(p);
+
+                // 若字段为泛型容器，且泛型为自定义类，则递归解析其字段
+                Type gt = f.getGenericType();
+                if (gt instanceof ParameterizedType pt2 && pt2.getActualTypeArguments().length > 0) {
+                    Type arg = pt2.getActualTypeArguments()[0];
+                    Class<?> comp = resolveComponentClass(arg);
+                    if (comp != null && isCustomEntityClass(comp)) {
+                        Set<String> seenReq = new HashSet<>();
+                        collectRequestFields(params, comp.getDeclaredFields(), StringKit.camelToUnderline(f.getName()), seenReq);
+                    }
+                }
+            }
+        }
+
+        // 响应参数字段
+        Set<String> seen = new HashSet<>();
+        collectResponseFields(params, method.getReturnType().getDeclaredFields(), null, api, seen, componentClass);
+        api.setParams(params);
+    }
+
+    /**
+     * 遍历并递归收集响应字段
+     */
+    private void collectResponseFields(List<ApiUploadReq.Item.Params> params, Field[] fields, String prefix, ApiUploadReq.Item api, Set<String> seen, Class<?> componentClass) {
+        for (Field f : fields) {
+            try {
+                String name = buildFieldName(f.getName(), prefix);
+                Class<?> cls = determineFieldClass(f, name, api, componentClass);
+                if (cls == null) {
+                    continue;
+                }
+
+                ApiUploadReq.Item.Params p = createResponseParam(f, name, cls, api);
+                params.add(p);
+
+                if (isCustomEntityClass(cls)) {
+                    String key = cls.getName();
+                    if (seen.contains(key)) {
+                        continue;
+                    }
+                    seen.add(key);
+                    try {
+                        collectResponseFields(params, cls.getDeclaredFields(), name, api, seen, componentClass);
+                    } finally {
+                        seen.remove(key);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Fail: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 遍历并递归收集请求字段（用于泛型自定义类型）
+     */
+    private void collectRequestFields(List<ApiUploadReq.Item.Params> params, Field[] fields, String prefix, Set<String> seen) {
+        for (Field f : fields) {
+            try {
+                String name = buildFieldName(f.getName(), prefix);
+                Class<?> cls = determineFieldClassForRequest(f);
+                if (cls == null) {
+                    continue;
+                }
+
+                ApiUploadReq.Item.Params p = new ApiUploadReq.Item.Params();
+                p.setField(name);
+                p.setType("request");
+                p.setFieldClass(buildFieldClassDisplay(f, cls));
+
+                Annotation[] anns = f.getAnnotations();
+                for (Annotation a : anns) {
+                    if (a instanceof ApiModelProperty) {
+                        p.setDescription((String) getAnnotationValue(a, "value"));
+                    } else if (a instanceof NotNull || a instanceof NotBlank || a instanceof NotEmpty) {
+                        p.setRequired(Bool.YES);
+                    } else if (a instanceof Range || a instanceof Email || a instanceof Length || a instanceof Mobile || a instanceof SetOf || a instanceof Size) {
+                        Boolean required = null;
+                        try {
+                            required = (Boolean) getAnnotationValue(a, "required");
+                        } catch (Exception ignore) {
+                        }
+                        if (required != null) {
+                            p.setRequired(required ? Bool.YES : Bool.NO);
+                        }
+                    }
+                }
+
+                params.add(p);
+
+                if (isCustomEntityClass(cls)) {
+                    String key = cls.getName();
+                    if (seen.contains(key)) {
+                        continue;
+                    }
+                    seen.add(key);
+                    try {
+                        collectRequestFields(params, cls.getDeclaredFields(), name, seen);
+                    } finally {
+                        seen.remove(key);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Fail: " + e.getMessage());
+            }
+        }
     }
 
     /**
      * 从接口类上提取服务名（扫描其实现接口上的 `@KrpcReference`）
      */
-    private String getImplServiceName(Class<?> beanClass) {
-        return Arrays.stream(beanClass.getInterfaces())
-                .flatMap(interfaceClass -> Arrays.stream(interfaceClass.getAnnotations()))
-                .filter(annotation -> annotation instanceof KrpcReference)
-                .findFirst()
-                .map(annotation -> getStringFromAnnotation(annotation, "serviceName"))
-                .orElse("");
-    }
-
-    /**
-     * 遍历请求参数类型并提取其字段信息
-     */
-    private void populateRequestFields(Class<?>[] parameterTypes, List<ApiUploadReq.Item.Params> params) {
-        Arrays.stream(parameterTypes)
-                .flatMap(parameterType -> Arrays.stream(parameterType.getDeclaredFields()))
-                .forEach(field -> processRequestField(field, params));
-    }
-
-    /**
-     * 处理单个请求字段
-     */
-    private void processRequestField(Field field, List<ApiUploadReq.Item.Params> params) {
-        ApiUploadReq.Item.Params param = new ApiUploadReq.Item.Params();
-        params.add(param);
-
-        String fieldName = StringKit.camelToUnderline(field.getName());
-        param.setField(fieldName);
-        param.setType("request");
-        // 展示泛型：List<String> / List<Object>
-        param.setFieldClass(buildFieldClassDisplay(field, field.getType()));
-
-        processFieldAnnotations(field, param);
-    }
-
-    /**
-     * 解析字段上的注解以设置描述与必填信息
-     */
-    private void processFieldAnnotations(Field field, ApiUploadReq.Item.Params param) {
-        Arrays.stream(field.getAnnotations())
-                .forEach(annotation -> processFieldAnnotation(annotation, param));
-    }
-
-    private void processFieldAnnotation(Annotation annotation, ApiUploadReq.Item.Params param) {
-        try {
-            if (annotation instanceof ApiModelProperty) {
-                param.setDescription(getStringFromAnnotation(annotation, "value"));
-            } else if (annotation instanceof NotNull || annotation instanceof NotBlank || annotation instanceof NotEmpty) {
-                param.setRequired(Bool.YES);
-            } else if (isValidationAnnotationWithRequired(annotation)) {
-                boolean required = getBooleanFromAnnotation(annotation, "required");
-                param.setRequired(required ? Bool.YES : Bool.NO);
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to process annotation: " + annotation.annotationType().getSimpleName());
-        }
-    }
-
-    private boolean isValidationAnnotationWithRequired(Annotation annotation) {
-        return annotation instanceof Range || annotation instanceof Email ||
-               annotation instanceof Length || annotation instanceof Mobile ||
-               annotation instanceof SetOf || annotation instanceof Size;
-    }
-
-    /**
-     * 递归填充响应字段信息
-     */
-    private void populateResponseFields(List<ApiUploadReq.Item.Params> params, Field[] fields, String fieldPrefix, ApiUploadReq.Item apiInterfaceInfo, Set<String> visited, Class<?> responseComponentClass) {
-        Arrays.stream(fields).forEach(field -> processResponseField(field, params, fieldPrefix, apiInterfaceInfo, visited, responseComponentClass));
-    }
-
-    private void processResponseField(Field field, List<ApiUploadReq.Item.Params> params, String fieldPrefix, ApiUploadReq.Item apiInterfaceInfo, Set<String> visited, Class<?> responseComponentClass) {
-        try {
-            String fieldName = buildFieldName(field.getName(), fieldPrefix);
-            Class<?> fieldClass = determineFieldClass(field, fieldName, apiInterfaceInfo, responseComponentClass);
-
-            if (fieldClass == null) {
-                return;
-            }
-
-            ApiUploadReq.Item.Params param = createResponseParam(field, fieldName, fieldClass, apiInterfaceInfo);
-            params.add(param);
-
-            // 递归处理实体类字段，使用 visited 防止循环引用
-            if (isCustomEntityClass(fieldClass)) {
-                String visitKey = fieldClass.getName();
-                if (visited.contains(visitKey)) {
-                    return;
-                }
-                visited.add(visitKey);
-                try {
-                    populateResponseFields(params, fieldClass.getDeclaredFields(), fieldName, apiInterfaceInfo, visited, responseComponentClass);
-                } finally {
-                    visited.remove(visitKey);
+    private String getServiceNameFromInterfaces(Class<?> beanClass) {
+        Class<?>[] interfaces = beanClass.getInterfaces();
+        for (Class<?> itf : interfaces) {
+            Annotation[] anns = itf.getAnnotations();
+            for (Annotation ann : anns) {
+                if (ann instanceof KrpcReference) {
+                    return (String) getAnnotationValue(ann, "serviceName");
                 }
             }
-        } catch (Exception e) {
-            System.err.println("Fail: " + e.getMessage());
         }
+        return "";
     }
 
-    private String buildFieldName(String fieldName, String fieldPrefix) {
-        if (StringKit.isNotBlank(fieldPrefix)) {
-            fieldName = fieldPrefix + "." + fieldName;
+    private String buildFieldName(String name, String prefix) {
+        if (StringKit.isNotBlank(prefix)) {
+            name = prefix + "." + name;
         }
-        return StringKit.camelToUnderline(fieldName);
+        return StringKit.camelToUnderline(name);
     }
 
-    private Class<?> determineFieldClass(Field field, String fieldName, ApiUploadReq.Item item, Class<?> responseComponentClass) throws ClassNotFoundException {
-        Class<?> fieldClass = field.getType();
+    private Class<?> determineFieldClass(Field field, String fieldName, ApiUploadReq.Item api, Class<?> componentClass) throws ClassNotFoundException {
+        Class<?> cls = field.getType();
 
         // 处理泛型参数
-        Type genericType = field.getGenericType();
-        if (genericType instanceof ParameterizedType pt) {
+        Type gt = field.getGenericType();
+        if (gt instanceof ParameterizedType pt) {
             if (pt.getActualTypeArguments().length > 0) {
-                Type actualTypeArgument = pt.getActualTypeArguments()[0];
-                String typeName = actualTypeArgument.getTypeName();
+                Type arg = pt.getActualTypeArguments()[0];
+                String typeName = arg.getTypeName();
                 String resolved = resolveToLoadableClassName(typeName);
                 if (StringKit.isBlank(resolved)) {
                     return null;
                 }
-                fieldClass = Class.forName(resolved);
+                cls = Class.forName(resolved);
             }
         }
 
-        // 特殊处理data字段：优先使用已解析的组件类
+        // 特殊处理 data 字段：优先使用已解析的组件类
         if (DATA_FIELD_NAME.equals(fieldName)) {
-            if (responseComponentClass != null) {
-                return responseComponentClass;
+            if (componentClass != null) {
+                return componentClass;
             }
-
-            String responseClass = item.getResponseClass();
-            if (StringKit.isBlank(responseClass)) {
+            String resp = api.getResponseClass();
+            if (StringKit.isBlank(resp)) {
                 return null;
             }
-            // 支持形如 List<Foo> / Set<Bar> / List<?> 的写法
-            if (responseClass.contains("<") && responseClass.endsWith(">")) {
-                String genericPart = responseClass.substring(responseClass.indexOf('<') + 1, responseClass.lastIndexOf('>')).trim();
-                int commaIdx = genericPart.indexOf(',');
-                if (commaIdx > -1) {
-                    genericPart = genericPart.substring(0, commaIdx).trim();
+            if (resp.contains("<") && resp.endsWith(">")) {
+                String generic = resp.substring(resp.indexOf('<') + 1, resp.lastIndexOf('>')).trim();
+                int comma = generic.indexOf(',');
+                if (comma > -1) {
+                    generic = generic.substring(0, comma).trim();
                 }
-                String resolved = resolveToLoadableClassName(genericPart);
-                if (StringKit.isBlank(resolved)) return null;
-                fieldClass = Class.forName(resolved);
+                String resolved = resolveToLoadableClassName(generic);
+                if (StringKit.isBlank(resolved)) {
+                    return null;
+                }
+                cls = Class.forName(resolved);
             } else {
-                String resolved = resolveToLoadableClassName(responseClass);
-                if (StringKit.isBlank(resolved)) return null;
-                fieldClass = Class.forName(resolved);
+                String resolved = resolveToLoadableClassName(resp);
+                if (StringKit.isBlank(resolved)) {
+                    return null;
+                }
+                cls = Class.forName(resolved);
             }
         }
 
-        return fieldClass;
+        return cls;
+    }
+
+    private Class<?> determineFieldClassForRequest(Field field) throws ClassNotFoundException {
+        Class<?> cls = field.getType();
+        Type gt = field.getGenericType();
+        if (gt instanceof ParameterizedType pt) {
+            if (pt.getActualTypeArguments().length > 0) {
+                Type arg = pt.getActualTypeArguments()[0];
+                if (arg instanceof Class<?>) {
+                    return (Class<?>) arg;
+                }
+                String typeName = arg.getTypeName();
+                String resolved = resolveToLoadableClassName(typeName);
+                if (!StringKit.isBlank(resolved)) {
+                    return Class.forName(resolved);
+                }
+            }
+        }
+        return cls;
     }
 
     private String resolveToLoadableClassName(String typeName) {
@@ -374,11 +432,9 @@ public class DocumentHelper {
             return null;
         }
         String name = typeName.trim();
-        // Strip surrounding generic content if any remains
         if (name.contains("<")) {
             name = name.substring(0, name.indexOf('<')).trim();
         }
-        // Handle wildcard ? , ? extends, ? super
         if (name.startsWith("?")) {
             name = name.replaceFirst("^\\?\\s*(extends|super)?\\s*", "").trim();
             if (name.isEmpty()) {
@@ -388,28 +444,26 @@ public class DocumentHelper {
         return name;
     }
 
-    private ApiUploadReq.Item.Params createResponseParam(Field field, String fieldName, Class<?> fieldClass, ApiUploadReq.Item item) {
-        ApiUploadReq.Item.Params param = new ApiUploadReq.Item.Params();
-
-        // data 字段使用展示的 responseClass；其他字段展示泛型：List<String> / List<Object>
-        String fieldClassName;
-        if (DATA_FIELD_NAME.equals(fieldName) && StringKit.isNotBlank(item.getResponseClass())) {
-            fieldClassName = item.getResponseClass();
+    private ApiUploadReq.Item.Params createResponseParam(Field field, String name, Class<?> cls, ApiUploadReq.Item api) {
+        ApiUploadReq.Item.Params p = new ApiUploadReq.Item.Params();
+        String display;
+        if (DATA_FIELD_NAME.equals(name) && StringKit.isNotBlank(api.getResponseClass())) {
+            display = api.getResponseClass();
         } else {
-            fieldClassName = buildFieldClassDisplay(field, fieldClass);
+            display = buildFieldClassDisplay(field, cls);
         }
+        p.setField(name);
+        p.setType("response");
+        p.setFieldClass(display);
 
-        param.setField(fieldName);
-        param.setType("response");
-        param.setFieldClass(fieldClassName);
-
-        // 处理ApiModelProperty注解
-        Arrays.stream(field.getAnnotations())
-                .filter(annotation -> annotation instanceof ApiModelProperty)
-                .findFirst()
-                .ifPresent(annotation -> param.setDescription(getStringFromAnnotation(annotation, "value")));
-
-        return param;
+        Annotation[] anns = field.getAnnotations();
+        for (Annotation a : anns) {
+            if (a instanceof ApiModelProperty) {
+                p.setDescription((String) getAnnotationValue(a, "value"));
+                break;
+            }
+        }
+        return p;
     }
 
     private String buildFieldClassDisplay(Field field, Class<?> resolvedClass) {
@@ -457,18 +511,17 @@ public class DocumentHelper {
             }
             return "Object";
         }
-        // 非参数化集合
         return "Object";
     }
 
-    private String buildTypeArgumentDisplay(Type arg) {
+    private String buildTypeDisplay(Type arg) {
         if (arg instanceof ParameterizedType p) {
             Type raw = p.getRawType();
             String container = (raw instanceof Class<?> rc && List.class.isAssignableFrom(rc)) ? "List" :
-                               (raw instanceof Class<?> rc2 && Set.class.isAssignableFrom(rc2)) ? "Set" :
-                               (raw instanceof Class<?> rc3 ? rc3.getSimpleName() : "Object");
+                    (raw instanceof Class<?> rc2 && Set.class.isAssignableFrom(rc2)) ? "Set" :
+                            (raw instanceof Class<?> rc3 ? rc3.getSimpleName() : "Object");
             Type[] args = p.getActualTypeArguments();
-            String inner = (args.length > 0) ? buildTypeArgumentDisplay(args[0]) : "Object";
+            String inner = (args.length > 0) ? buildTypeDisplay(args[0]) : "Object";
             return container + "<" + inner + ">";
         }
         if (arg instanceof Class<?> c) {
@@ -511,9 +564,8 @@ public class DocumentHelper {
         return Object.class;
     }
 
-    private boolean isCustomEntityClass(Class<?> fieldClass) {
-        String packageName = fieldClass.getPackageName();
-        return packageName.startsWith("com.ttc.api") || packageName.startsWith("com.mycz.arch");
+    private boolean isCustomEntityClass(Class<?> cls) {
+        String pkg = cls.getPackageName();
+        return pkg.startsWith("com.ttc.api") || pkg.startsWith("com.mycz.arch");
     }
-
 }
