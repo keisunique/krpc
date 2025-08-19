@@ -201,6 +201,13 @@ public class DocumentHelper {
                 }
             }
 
+            // 新增：若参数本身为自定义类型，递归展开其字段
+            if (isCustomEntityClass(pType)) {
+                Set<String> seenReq = new HashSet<>();
+                collectRequestFields(params, pType.getDeclaredFields(), null, seenReq);
+                continue;
+            }
+
             // 否则按原始请求对象的字段解析
             Field[] fields = pType.getDeclaredFields();
             for (Field f : fields) {
@@ -237,6 +244,13 @@ public class DocumentHelper {
                     if (comp != null && isCustomEntityClass(comp)) {
                         Set<String> seenReq = new HashSet<>();
                         collectRequestFields(params, comp.getDeclaredFields(), StringKit.camelToUnderline(f.getName()), seenReq);
+                    }
+                } else {
+                    // 新增：若字段本身为自定义类型（非泛型），递归展开其字段
+                    Class<?> fTypeCls = f.getType();
+                    if (isCustomEntityClass(fTypeCls)) {
+                        Set<String> seenReq = new HashSet<>();
+                        collectRequestFields(params, fTypeCls.getDeclaredFields(), StringKit.camelToUnderline(f.getName()), seenReq);
                     }
                 }
             }

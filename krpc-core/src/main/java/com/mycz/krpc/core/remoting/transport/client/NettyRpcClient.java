@@ -74,7 +74,7 @@ public class NettyRpcClient {
             rpcRequest.setContext(new HashMap<>(ApplicationContext.getContext()));
             rpcRequest.setIp(ApplicationContext.getIp());
             if (StringKit.isBlank(rpcRequest.getTraceId())) {
-                rpcRequest.setTraceId(RandomKit.randomNumStr(16));
+                rpcRequest.setTraceId("df_" + RandomKit.randomString(RandomKit.CS_ALPHANUM, 6));
             }
 
             // 封装rpcMessage

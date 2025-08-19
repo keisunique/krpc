@@ -12,7 +12,7 @@
 
     <groupId>com.mycz</groupId>
     <artifactId>krpc-spring-boot-stater</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <name>krpc-stater</name>
     <description>krpc-stater</description>
 
@@ -48,7 +48,7 @@
         <dependency>
             <groupId>com.mycz</groupId>
             <artifactId>krpc-core</artifactId>
-            <version>1.0.2</version>
+            <version>1.0.3</version>
         </dependency>
 
         <dependency>
