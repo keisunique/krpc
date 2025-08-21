@@ -28,6 +28,11 @@ public @interface RequestMapping {
     String path() default "";
 
     /**
+     * 请求路径集合
+     */
+    String[] paths() default {};
+
+    /**
      * 请求路径前缀
      */
     String prefix() default "";
@@ -58,7 +63,7 @@ public @interface RequestMapping {
     boolean deliverPayload() default false;
 
     /**
-     * 是否床底原始请求参数
+     * 是否传递原始请求参数
      */
     boolean deliverParams() default false;
 

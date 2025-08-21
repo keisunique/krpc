@@ -22,7 +22,10 @@ import org.springframework.context.event.EventListener;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 @Slf4j
 @EnableConfigurationProperties({
@@ -103,12 +106,6 @@ public class RpcAutoConfiguration {
 
         log.info("RequestMapping接口登记数量: {}", count);
 
-//
-//        if (RpcReferenceInvoke.getInterfaceSize() == 0) {
-//            log.warn("未实现任何RPC接口, 不启动Rpc服务");
-//            return;
-//        }
-
         // 启动RPC服务
         RpcConfig config = new RpcConfig();
         config.setName(rpcProperties.getName());
@@ -126,40 +123,48 @@ public class RpcAutoConfiguration {
 
     private void processMapper(RequestMapping mapping, String clazz, Method method) {
         if (mapping != null) {
-            if (StringKit.isBlank(mapping.path())) {
+            if (StringKit.isBlank(mapping.path()) && mapping.paths().length == 0) {
                 return;
             }
 
-            String path = mapping.path();
-            if (!path.startsWith("/")) {
-                path = "/" + path;
+            List<String> paths = new ArrayList<>(Arrays.asList(mapping.paths()));
+            if (mapping.path() != null) {
+                paths.add(mapping.path());
             }
 
-            // 构造映射路径信息
-            MappingEntity entity = MappingEntity.builder()
-                    .name(mapping.name())
-                    .method(mapping.method())
-                    .path(path)
-                    .authority(mapping.authority())
-                    .authorityType(mapping.authorityType())
-                    .description(mapping.description())
-                    .responseType(mapping.responseType())
-                    .deliverPayload(mapping.deliverPayload())
-                    .deliverParams(mapping.deliverParams())
-                    .createTime(new Date())
-                    .service(MappingEntity.Service.builder()
-                            .name(rpcProperties.getName())
-                            .clazz(clazz)
-                            .method(method.getName())
-                            .paramType(method.getParameterCount() > 0 ? method.getParameterTypes()[0].getName() : "")
-                            .build())
-                    .build();
+            for (String path : paths) {
+                String pathTemp = path;
 
-            // 写入consul
-            if (path.startsWith("/")) {
-                path = path.replaceFirst("/", "");
+                if (!pathTemp.startsWith("/")) {
+                    pathTemp = "/" + pathTemp;
+                }
+
+                // 构造映射路径信息
+                MappingEntity entity = MappingEntity.builder()
+                        .name(mapping.name())
+                        .method(mapping.method())
+                        .path(pathTemp)
+                        .authority(mapping.authority())
+                        .authorityType(mapping.authorityType())
+                        .description(mapping.description())
+                        .responseType(mapping.responseType())
+                        .deliverPayload(mapping.deliverPayload())
+                        .deliverParams(mapping.deliverParams())
+                        .createTime(new Date())
+                        .service(MappingEntity.Service.builder()
+                                .name(rpcProperties.getName())
+                                .clazz(clazz)
+                                .method(method.getName())
+                                .paramType(method.getParameterCount() > 0 ? method.getParameterTypes()[0].getName() : "")
+                                .build())
+                        .build();
+
+                // 写入consul
+                if (pathTemp.startsWith("/")) {
+                    pathTemp = pathTemp.replaceFirst("/", "");
+                }
+                client.setKVValue(pathTemp + "/" + mapping.method(), JsonKit.toPrettyJson(entity));
             }
-            client.setKVValue(path + "/" + mapping.method(), JsonKit.toPrettyJson(entity));
         }
     }
 

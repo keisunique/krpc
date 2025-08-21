@@ -29,7 +29,17 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 文档上报辅助类
+ * 文档上报辅助类。
+ *
+ * 设计要点：
+ * - 扫描 Spring 容器中的业务 Service（包前缀限定），根据类及方法上的 `@RequestMapping`/`@RequestMappings`
+ *   组合出 API 元信息，打包为 `ApiUploadReq` 上报。
+ * - 通过实现接口上的 `@KrpcReference` 获取服务名，避免直接依赖实现类命名。
+ * - 对请求参数与响应类型做“结构化展开”：
+ *   - 请求侧：当参数为集合/泛型容器，且泛型为自定义实体时，直接展开该自定义实体的字段；
+ *     当参数本身或字段本身为自定义实体（非泛型）时，同样递归展开。
+ *   - 响应侧：优先识别返回体中 data 字段对应的组件类，按自定义实体进行递归展开，并使用 `seen` 集合防止循环依赖导致无限递归。
+ * - 泛型处理：以“能展示即可”为目标，尽量给出可读的 `SimpleName` 或 `Container<Inner>` 展示字符串。
  */
 @Slf4j
 public class DocumentHelper {
@@ -39,13 +49,27 @@ public class DocumentHelper {
     private final ApplicationContext applicationContext;
     private final RpcProperties rpcProperties;
 
+    /**
+     * 构造函数。
+     *
+     * @param applicationContext Spring 上下文，用于发现并获取目标 Bean
+     * @param rpcProperties      RPC 配置，其中包含文档上报相关配置
+     */
     public DocumentHelper(ApplicationContext applicationContext, RpcProperties rpcProperties) {
         this.applicationContext = applicationContext;
         this.rpcProperties = rpcProperties;
     }
 
     /**
-     * 触发文档上报
+     * 触发文档上报。
+     *
+     * 流程：
+     * 1. 校验文档上报开关与 URL 配置。
+     * 2. 扫描容器中目标包前缀下的 Bean，提取其 API 元信息。
+     * 3. 通过 HTTP 以 Snake Case 序列化结构上报至文档中心。
+     *
+     * 异常策略：
+     * - 若配置不完整则直接返回，不抛异常。
      */
     public void report() throws Exception {
         if (rpcProperties.getDocument() == null || !rpcProperties.getDocument().getEnable()) {
@@ -79,7 +103,15 @@ public class DocumentHelper {
     }
 
     /**
-     * 处理单个 Bean
+     * 处理单个 Bean，解析其公开方法上的网关映射注解，构造上报条目。
+     *
+     * 核心逻辑：
+     * - 通过实现接口扫描 `@KrpcReference` 得到 serviceName。
+     * - 识别方法上的 `@RequestMapping` 或 `@RequestMappings`，生成多个 API 条目。
+     * - 填充请求与响应结构（含递归解析）。
+     *
+     * @param bean Spring 容器中的目标 Bean 实例
+     * @return 该 Bean 对应的上报条目集合；若无法确定服务名则返回 null
      */
     private List<ApiUploadReq.Item> processBean(Object bean) {
         try {
@@ -107,26 +139,34 @@ public class DocumentHelper {
                     }
 
                     for (RequestMapping mapping : mappings) {
-                        ApiUploadReq.Item api = new ApiUploadReq.Item();
-                        api.setServiceName(serviceName);
-                        api.setClassName(clazz.getName());
-                        api.setTag(tag);
-                        try {
-                            api.setName(method.getName());
-                            api.setMethod(((RequestMethod) getAnnotationValue(mapping, "method")).name());
-                            api.setPath((String) getAnnotationValue(mapping, "path"));
-                            api.setPrefix((String) getAnnotationValue(mapping, "prefix"));
-                            api.setAuthority(((Boolean) getAnnotationValue(mapping, "authority")) ? Bool.YES : Bool.NO);
-                            api.setAuthorityType(((AuthorityType) getAnnotationValue(mapping, "authorityType")).name());
-                            api.setDescription((String) getAnnotationValue(mapping, "description"));
-                            api.setResponseType(((ResponseType) getAnnotationValue(mapping, "responseType")).name());
-                            api.setDeliverPayload(((Boolean) getAnnotationValue(mapping, "deliverPayload")) ? Bool.YES : Bool.NO);
-                            api.setDeliverParams(((Boolean) getAnnotationValue(mapping, "deliverParams")) ? Bool.YES : Bool.NO);
+                        List<String> paths = new ArrayList<>(Arrays.asList(mapping.paths()));
+                        if (mapping.path() != null) {
+                            paths.add(mapping.path());
+                        }
 
-                            fillParamsAndResponse(method, api);
-                            list.add(api);
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to process RequestMapping annotation for method: " + method.getName(), e);
+                        for (String path : paths) {
+                            ApiUploadReq.Item api = new ApiUploadReq.Item();
+                            api.setServiceName(serviceName);
+                            api.setClassName(clazz.getName());
+                            api.setTag(tag);
+                            try {
+                                api.setName(method.getName());
+                                api.setMethod(((RequestMethod) getAnnotationValue(mapping, "method")).name());
+                                api.setPath(path);
+                                api.setPrefix((String) getAnnotationValue(mapping, "prefix"));
+                                api.setAuthority(((Boolean) getAnnotationValue(mapping, "authority")) ? Bool.YES : Bool.NO);
+                                api.setAuthorityType(((AuthorityType) getAnnotationValue(mapping, "authorityType")).name());
+                                api.setDescription((String) getAnnotationValue(mapping, "description"));
+                                api.setResponseType(((ResponseType) getAnnotationValue(mapping, "responseType")).name());
+                                api.setDeliverPayload(((Boolean) getAnnotationValue(mapping, "deliverPayload")) ? Bool.YES : Bool.NO);
+                                api.setDeliverParams(((Boolean) getAnnotationValue(mapping, "deliverParams")) ? Bool.YES : Bool.NO);
+
+                                // 解析请求/响应结构并填充
+                                fillParamsAndResponse(method, api);
+                                list.add(api);
+                            } catch (Exception e) {
+                                throw new RuntimeException("Failed to process RequestMapping annotation for method: " + method.getName(), e);
+                            }
                         }
                     }
                 }
@@ -138,7 +178,15 @@ public class DocumentHelper {
     }
 
     /**
-     * 读取注解方法值
+     * 读取注解方法值的通用反射工具。
+     *
+     * 注意：
+     * - 仅按方法名进行反射调用，不做额外的类型/可访问性检查。
+     * - 找不到方法或调用异常时，包装为运行时异常抛出。
+     *
+     * @param annotation 注解实例
+     * @param methodName 注解方法名
+     * @return 注解方法返回值
      */
     private Object getAnnotationValue(Annotation annotation, String methodName) {
         try {
@@ -150,10 +198,22 @@ public class DocumentHelper {
     }
 
     /**
-     * 填充请求/响应信息
+     * 填充请求与响应信息。
+     *
+     * 请求侧：
+     * - 若首个参数为泛型容器（List/Set/…），且泛型为自定义类型，直接展开该自定义类型字段。
+     * - 若参数本身就是自定义类型（非泛型），同样递归展开其字段。
+     * - 否则，按原始参数类型的字段进行解析；其中若字段为泛型容器且泛型为自定义类型，则在该字段名下继续展开。
+     *
+     * 响应侧：
+     * - 尝试从返回泛型（如 Result<T>）中解析组件类 T，并在处理名为 data 的字段时优先使用。
+     * - 对自定义实体类型字段递归展开，并使用 `seen` 集合避免循环嵌套。
+     *
+     * @param method 目标方法
+     * @param api    将被填充的上报条目
      */
     private void fillParamsAndResponse(Method method, ApiUploadReq.Item api) {
-        // 请求类名
+        // 请求类名（展示用途）
         Class<?>[] paramTypes = method.getParameterTypes();
         if (paramTypes.length < 1) {
             return;
@@ -172,7 +232,7 @@ public class DocumentHelper {
             api.setRequestClass(paramTypes[0].getName());
         }
 
-        // 响应类展示与组件类
+        // 响应类展示与组件类解析（用于 data 字段展开）
         Type retGeneric = method.getGenericReturnType();
         Class<?> componentClass = null;
         if (retGeneric instanceof ParameterizedType pt) {
@@ -186,7 +246,7 @@ public class DocumentHelper {
 
         List<ApiUploadReq.Item.Params> params = new ArrayList<>();
 
-        // 请求参数字段
+        // 请求参数字段解析
         for (int i = 0; i < paramTypes.length; i++) {
             Class<?> pType = paramTypes[i];
             Type gpt = (genericParamTypes.length > i) ? genericParamTypes[i] : null;
@@ -246,7 +306,7 @@ public class DocumentHelper {
                         collectRequestFields(params, comp.getDeclaredFields(), StringKit.camelToUnderline(f.getName()), seenReq);
                     }
                 } else {
-                    // 新增：若字段本身为自定义类型（非泛型），递归展开其字段
+                    // 若字段本身为自定义类型（非泛型），递归展开其字段
                     Class<?> fTypeCls = f.getType();
                     if (isCustomEntityClass(fTypeCls)) {
                         Set<String> seenReq = new HashSet<>();
@@ -263,7 +323,19 @@ public class DocumentHelper {
     }
 
     /**
-     * 遍历并递归收集响应字段
+     * 遍历并递归收集响应字段。
+     *
+     * 规则：
+     * - 优先用 `determineFieldClass` 判定字段的实际类型（处理 data 字段与泛型场景）。
+     * - 对自定义实体类型进行递归展开。
+     * - 使用 `seen` 防止循环依赖（如 A 含有 B，B 又含有 A）。
+     *
+     * @param params         累积写入的参数列表
+     * @param fields         当前类的字段集合
+     * @param prefix         递归前缀，用于生成类似 `parent.child` 的层级字段名
+     * @param api            当前 API 上报条目（提供响应展示串等）
+     * @param seen           循环检测集合
+     * @param componentClass 若返回类型为容器，此处为其组件类（用于 data 字段）
      */
     private void collectResponseFields(List<ApiUploadReq.Item.Params> params, Field[] fields, String prefix, ApiUploadReq.Item api, Set<String> seen, Class<?> componentClass) {
         for (Field f : fields) {
@@ -296,7 +368,16 @@ public class DocumentHelper {
     }
 
     /**
-     * 遍历并递归收集请求字段（用于泛型自定义类型）
+     * 遍历并递归收集请求字段（用于泛型或自定义实体类型）。
+     *
+     * 注意：
+     * - 与响应侧类似，也通过 `seen` 规避循环嵌套。
+     * - 仅提取字段上的展示信息与校验注解（必填等）。
+     *
+     * @param params 累积写入的参数列表
+     * @param fields 当前类的字段集合
+     * @param prefix 字段名前缀
+     * @param seen   循环检测集合
      */
     private void collectRequestFields(List<ApiUploadReq.Item.Params> params, Field[] fields, String prefix, Set<String> seen) {
         for (Field f : fields) {
@@ -351,7 +432,13 @@ public class DocumentHelper {
     }
 
     /**
-     * 从接口类上提取服务名（扫描其实现接口上的 `@KrpcReference`）
+     * 从实现的接口中提取服务名：扫描接口上的 `@KrpcReference` 注解。
+     *
+     * 约定：
+     * - 一个实现类可能实现多个接口；此处遇到第一个带 `@KrpcReference` 的接口即返回。
+     *
+     * @param beanClass 目标实现类
+     * @return 服务名；若未找到则返回空串
      */
     private String getServiceNameFromInterfaces(Class<?> beanClass) {
         Class<?>[] interfaces = beanClass.getInterfaces();
@@ -366,6 +453,13 @@ public class DocumentHelper {
         return "";
     }
 
+    /**
+     * 生成带前缀的字段名，并统一转为下划线风格。
+     *
+     * @param name   字段原始名
+     * @param prefix 可选的前缀（用于嵌套展开）
+     * @return 形如 `a.b` 的层级名再做 camel->underline 转换后的结果
+     */
     private String buildFieldName(String name, String prefix) {
         if (StringKit.isNotBlank(prefix)) {
             name = prefix + "." + name;
@@ -373,6 +467,19 @@ public class DocumentHelper {
         return StringKit.camelToUnderline(name);
     }
 
+    /**
+     * 判定响应字段应展示/展开的实际类型。
+     *
+     * 处理策略：
+     * - 泛型容器字段：尝试取第一个泛型参数的可加载类名，再 `Class.forName`。
+     * - data 字段：优先使用外部已解析的 `componentClass`；否则从 `api.getResponseClass()` 的泛型串做回推。
+     *
+     * @param field          字段反射对象
+     * @param fieldName      已带前缀的字段名（用于识别 data）
+     * @param api            当前 API 条目
+     * @param componentClass 返回体的组件类（若已解析）
+     * @return 用于展开/递归的 Class；若无法解析则返回 null
+     */
     private Class<?> determineFieldClass(Field field, String fieldName, ApiUploadReq.Item api, Class<?> componentClass) throws ClassNotFoundException {
         Class<?> cls = field.getType();
 
@@ -422,6 +529,14 @@ public class DocumentHelper {
         return cls;
     }
 
+    /**
+     * 判定请求字段的实际类型（更偏展示用途）。
+     *
+     * 优先处理泛型容器的第一个泛型参数；若解析失败，则退回原始字段类型。
+     *
+     * @param field 字段反射对象
+     * @return 字段类型或解析得到的泛型参数类型
+     */
     private Class<?> determineFieldClassForRequest(Field field) throws ClassNotFoundException {
         Class<?> cls = field.getType();
         Type gt = field.getGenericType();
@@ -441,6 +556,16 @@ public class DocumentHelper {
         return cls;
     }
 
+    /**
+     * 将类型名规整为可 Class.forName 的类名。
+     *
+     * 处理：
+     * - 去掉外层泛型（截断 `<` 后缀）。
+     * - 处理通配 `?` 及 `extends/super` 边界。
+     *
+     * @param typeName 原始类型名（可能包含泛型/通配）
+     * @return 可加载的类名；若无法确定，返回 null
+     */
     private String resolveToLoadableClassName(String typeName) {
         if (typeName == null) {
             return null;
@@ -458,6 +583,17 @@ public class DocumentHelper {
         return name;
     }
 
+    /**
+     * 创建响应侧的参数条目，并确定展示字符串。
+     *
+     * 对 `data` 字段采用返回类展示串，以保留 `Container<Inner>` 的可读性；其他字段使用精简展示。
+     *
+     * @param field 字段反射对象
+     * @param name  字段名（可能包含前缀）
+     * @param cls   决定展开/递归的类型
+     * @param api   当前 API 条目
+     * @return 参数条目
+     */
     private ApiUploadReq.Item.Params createResponseParam(Field field, String name, Class<?> cls, ApiUploadReq.Item api) {
         ApiUploadReq.Item.Params p = new ApiUploadReq.Item.Params();
         String display;
@@ -480,6 +616,17 @@ public class DocumentHelper {
         return p;
     }
 
+    /**
+     * 构建字段类型展示串。
+     *
+     * 规则：
+     * - List/Set 展示为 `Container<Inner>` 的形式；内层尽量给出简单类名。
+     * - 其他直接使用解析后的 `resolvedClass.getSimpleName()`。
+     *
+     * @param field          字段反射对象
+     * @param resolvedClass  已判定用于展示/展开的类型
+     * @return 展示字符串
+     */
     private String buildFieldClassDisplay(Field field, Class<?> resolvedClass) {
         Class<?> raw = field.getType();
         if (List.class.isAssignableFrom(raw) || Set.class.isAssignableFrom(raw)) {
@@ -490,6 +637,16 @@ public class DocumentHelper {
         return resolvedClass.getSimpleName();
     }
 
+    /**
+     * 提取并展示容器类型的泛型实参。
+     *
+     * 策略：
+     * - 若为 Class，使用简单名；若为 ParameterizedType，取其原始类型简单名；
+     * - 对通配符与类型变量，若存在上界/下界且不为 Object，则展示该边界的简单名；否则回退为 "Object"。
+     *
+     * @param genericType 字段的通用类型
+     * @return 泛型参数的展示字符串
+     */
     private String resolveGenericArgumentDisplay(Type genericType) {
         if (genericType instanceof ParameterizedType pt) {
             Type[] args = pt.getActualTypeArguments();
@@ -528,6 +685,15 @@ public class DocumentHelper {
         return "Object";
     }
 
+    /**
+     * 将 `Type` 构造成友好的展示串。
+     *
+     * - 支持容器类型的递归展示，如 `Result<List<Foo>>` 将递归地仅展示第一层参数。
+     * - 对通配符/类型变量回退为 "Object" 或其上界简单名。
+     *
+     * @param arg 目标类型
+     * @return 展示字符串
+     */
     private String buildTypeDisplay(Type arg) {
         if (arg instanceof ParameterizedType p) {
             Type raw = p.getRawType();
@@ -554,6 +720,12 @@ public class DocumentHelper {
         return "Object";
     }
 
+    /**
+     * 从 `Type` 推断“组件类”（常用于容器的第一个类型参数）。
+     *
+     * @param arg 目标类型
+     * @return 组件类；若无法确定则返回 Object.class
+     */
     private Class<?> resolveComponentClass(Type arg) {
         if (arg instanceof ParameterizedType p) {
             Type[] args = p.getActualTypeArguments();
@@ -578,6 +750,16 @@ public class DocumentHelper {
         return Object.class;
     }
 
+    /**
+     * 判定是否为“自定义实体类”。
+     *
+     * 约定：
+     * - 通过包名前缀来做启发式判断（`com.ttc.api` 或 `com.mycz.arch`）。
+     * - 该规则可根据实际业务包结构扩展/收敛。
+     *
+     * @param cls 目标类型
+     * @return 是否认为是自定义实体
+     */
     private boolean isCustomEntityClass(Class<?> cls) {
         String pkg = cls.getPackageName();
         return pkg.startsWith("com.ttc.api") || pkg.startsWith("com.mycz.arch");
