@@ -132,6 +132,8 @@ public class RpcAutoConfiguration {
                 paths.add(mapping.path());
             }
 
+            paths = paths.stream().filter(StringKit::isNotBlank).toList();
+
             for (String path : paths) {
                 String pathTemp = path;
 
@@ -163,6 +165,7 @@ public class RpcAutoConfiguration {
                 if (pathTemp.startsWith("/")) {
                     pathTemp = pathTemp.replaceFirst("/", "");
                 }
+//                log.info("注册映射路径: {} {}", pathTemp, mapping.method());
                 client.setKVValue(pathTemp + "/" + mapping.method(), JsonKit.toPrettyJson(entity));
             }
         }

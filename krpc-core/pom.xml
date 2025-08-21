@@ -6,11 +6,11 @@
     <parent>
         <artifactId>krpc</artifactId>
         <groupId>com.mycz</groupId>
-        <version>1.0.3</version>
+        <version>1.0.4</version>
     </parent>
 
     <artifactId>krpc-core</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
 
     <properties>
         <java.version>21</java.version>

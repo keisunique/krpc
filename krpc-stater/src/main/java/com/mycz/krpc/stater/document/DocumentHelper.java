@@ -144,6 +144,8 @@ public class DocumentHelper {
                             paths.add(mapping.path());
                         }
 
+                        paths = paths.stream().filter(StringKit::isNotBlank).toList();
+
                         for (String path : paths) {
                             ApiUploadReq.Item api = new ApiUploadReq.Item();
                             api.setServiceName(serviceName);
